@@ -7,15 +7,15 @@
 
 ## Overview
 
-ContextMemory is a production-ready tool that transforms development conversations into a searchable knowledge base. Store session contexts, code snippets, and development notes with AI-assisted smart defaults.
+ContextMemory transforms development conversations into a searchable knowledge base. Store session contexts, code snippets, and development notes with AI-assisted smart defaults.
 
 **Key Features:**
-- **File-based storage** - No servers, databases, or external dependencies
+- **Multiple storage options** - File-based (current), cloud storage (planned), remote APIs (planned)
 - **Professional CLI** - `cmctl` with kubectl-style output and verbosity controls
 - **AI-assisted defaults** - Smart name and label generation  
-- **Extensible architecture** - Provider system for file, cloud, and remote storage
-- **Cross-platform** - Single Go binary, works everywhere
-- **LLM-optimized** - Designed for AI-assisted development workflows
+- **Extensible architecture** - Provider system for different storage backends
+- **Cross-platform** - Single Go binary for CLI operations
+- **IDE integration** - VS Code extension for seamless workflow integration
 
 ## Quick Start
 
@@ -66,10 +66,10 @@ contextmemory/
 - Legacy CLI for development/testing
 
 **Storage Providers:**
-- **File Provider**: Local filesystem storage (current, production-ready)
-- **S3 Provider**: AWS S3 backend (skeleton implemented)
-- **GCS Provider**: Google Cloud Storage (skeleton implemented)  
-- **Remote Provider**: HTTP API backend (skeleton implemented)
+- **File Provider**: Local filesystem storage (current, fully functional)
+- **S3 Provider**: AWS S3 backend (planned)
+- **GCS Provider**: Google Cloud Storage (planned)  
+- **Remote Provider**: HTTP API backend (planned)
 
 ## CLI Reference
 
@@ -153,21 +153,21 @@ ContextMemory uses `~/.contextmemory/` for storage and configuration:
 
 ## Features
 
-✅ **Production Ready:**
+✅ **Current (v0.6.0):**
 - File-based storage with full CRUD operations
-- Professional CLI (`cmctl`) with kubectl-style output  
+- CLI tool (`cmctl`) with kubectl-style output  
 - AI-assisted name and label generation
 - Cross-platform Go binary (macOS, Linux, Windows)
-- Extensible provider architecture
-- Comprehensive error handling and validation
+- VS Code extension with tree view and commands
+- Extensible provider architecture foundation
 
 🚧 **Planned:**
-- VS Code extension with integrated UI
-- AWS S3 and Google Cloud Storage providers
+- Cloud storage providers (AWS S3, Google Cloud Storage)
 - Remote HTTP API provider
-- Advanced search and filtering
+- Enhanced VS Code extension features
+- Advanced search and filtering capabilities
 - Team collaboration features
 
 ---
 
-**Version 0.6.0** - Production-ready file-based memory management for LLM workflows.
+**Version 0.6.0** - Initial release with file-based storage and VS Code integration.

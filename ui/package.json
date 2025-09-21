@@ -1,0 +1,233 @@
+{
+  "name": "contextmemory",
+  "displayName": "ContextMemory",
+  "description": "Clean, simple, file-based memory management for LLM development workflows",
+  "version": "0.6.0",
+  "publisher": "cloudygreybeard",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudygreybeard/contextmemory"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Snippets",
+    "Education"
+  ],
+  "keywords": [
+    "memory",
+    "context",
+    "conversation",
+    "chat",
+    "notes",
+    "productivity",
+    "ai",
+    "cursor",
+    "cmctl",
+    "file-based"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "contextmemory.createMemory",
+        "title": "Create Memory",
+        "category": "ContextMemory",
+        "icon": "$(add)"
+      },
+      {
+        "command": "contextmemory.createMemoryFromSelection",
+        "title": "Create Memory from Selection",
+        "category": "ContextMemory",
+        "icon": "$(bookmark)"
+      },
+      {
+        "command": "contextmemory.createMemoryFromChat",
+        "title": "Create Memory from Current Chat",
+        "category": "ContextMemory",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "contextmemory.searchMemories",
+        "title": "Search Memories",
+        "category": "ContextMemory",
+        "icon": "$(search)"
+      },
+      {
+        "command": "contextmemory.listMemories",
+        "title": "List All Memories",
+        "category": "ContextMemory",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "contextmemory.refreshMemories",
+        "title": "Refresh Memories",
+        "category": "ContextMemory",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "contextmemory.openMemory",
+        "title": "Open Memory",
+        "category": "ContextMemory",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "contextmemory.health",
+        "title": "Check Health",
+        "category": "ContextMemory",
+        "icon": "$(pulse)"
+      }
+    ],
+    "views": {
+      "contextmemory": [
+        {
+          "id": "contextmemory.memories",
+          "name": "Memories",
+          "when": "true",
+          "icon": "$(database)",
+          "contextualTitle": "ContextMemory"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "contextmemory",
+          "title": "ContextMemory",
+          "icon": "$(database)"
+        }
+      ]
+    },
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "contextmemory.createMemory"
+        },
+        {
+          "command": "contextmemory.createMemoryFromSelection",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "contextmemory.createMemoryFromChat"
+        },
+        {
+          "command": "contextmemory.searchMemories"
+        },
+        {
+          "command": "contextmemory.listMemories"
+        },
+        {
+          "command": "contextmemory.refreshMemories"
+        },
+        {
+          "command": "contextmemory.health"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "contextmemory.createMemoryFromSelection",
+          "when": "editorHasSelection",
+          "group": "contextmemory@1"
+        },
+        {
+          "command": "contextmemory.createMemoryFromChat",
+          "when": "resourceExtname == .md",
+          "group": "contextmemory@2"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "contextmemory.createMemory",
+          "when": "view == contextmemory.memories",
+          "group": "navigation@1"
+        },
+        {
+          "command": "contextmemory.searchMemories",
+          "when": "view == contextmemory.memories",
+          "group": "navigation@2"
+        },
+        {
+          "command": "contextmemory.refreshMemories",
+          "when": "view == contextmemory.memories",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "contextmemory.openMemory",
+          "when": "view == contextmemory.memories && viewItem == memory",
+          "group": "navigation@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ContextMemory",
+      "properties": {
+        "contextmemory.cliPath": {
+          "type": "string",
+          "default": "cmctl",
+          "description": "Path to the cmctl CLI binary"
+        },
+        "contextmemory.storageDir": {
+          "type": "string",
+          "default": "",
+          "description": "Custom storage directory (defaults to ~/.contextmemory)"
+        },
+        "contextmemory.provider": {
+          "type": "string",
+          "default": "file",
+          "enum": ["file", "s3", "gcs", "remote"],
+          "description": "Storage provider to use"
+        },
+        "contextmemory.verbosity": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "CLI verbosity level (0=quiet, 1=normal, 2=verbose)"
+        },
+        "contextmemory.autoSuggestLabels": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically suggest labels when creating memories"
+        },
+        "contextmemory.defaultLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Default labels to apply to new memories"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test",
+    "package": "vsce package",
+    "install-extension": "code --install-extension contextmemory-0.6.0.vsix"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.0",
+    "@vscode/test-cli": "^0.0.4",
+    "@vscode/test-electron": "^2.3.8",
+    "@vscode/vsce": "^2.22.0"
+  },
+  "dependencies": {}
+}

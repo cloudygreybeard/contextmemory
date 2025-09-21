@@ -67,23 +67,39 @@ build.storage:
 
 build.cli:
 	@echo "[BUILD] Building Go CLI..."
-	@if [ -d cmd/cm ]; then \
-		cd cmd/cm && go build -o cmctl . && echo "Go CLI built successfully"; \
+	@if [ -d cmd/cmctl ]; then \
+		cd cmd/cmctl && go build -o cmctl . && echo "Go CLI built successfully"; \
 	else \
 		echo "No Go CLI found"; \
 	fi
 	@echo "[SUCCESS] CLI built"
 
 build.ui:
-	@echo "[BUILD] Building UI extension..."
-	@if [ -d ui ]; then \
-		cd ui && if [ -f package.json ]; then npm run build 2>/dev/null || echo "No build script configured"; fi; \
+	@echo "[BUILD] Building VS Code extension..."
+	@if [ -d ui ] && [ -f ui/package.json ]; then \
+		cd ui && npm run compile && echo "Extension compiled successfully"; \
+	else \
+		echo "UI directory or package.json not found"; \
 	fi
-	@echo "[SUCCESS] UI built"
+	@echo "[SUCCESS] Extension built"
 
 # Development iteration cycle
 dev.iterate: build install
 	@echo "[DEV] Development iteration complete!"
+
+# Package VS Code extension
+package.ui:
+	@echo "[PACKAGE] Creating extension package..."
+	@if [ -d ui ] && [ -f ui/package.json ]; then \
+		cd ui && \
+		if [ ! -d dist ]; then \
+			echo "[BUILD] Compiling extension first..."; \
+			npm run compile; \
+		fi && \
+		npm run package && echo "Extension packaged successfully"; \
+	else \
+		echo "UI directory or package.json not found"; \
+	fi
 
 # Install CLI and extension locally
 install: install.cli install.ui
@@ -168,7 +184,7 @@ info.status:
 	@if [ -d core ]; then echo "  ✓ Core operations (TypeScript)"; else echo "  ✗ Core operations"; fi
 	@if [ -d storage ]; then echo "  ✓ Storage backend (TypeScript)"; else echo "  ✗ Storage backend"; fi
 	@if [ -f cmd/cmctl/cmctl ]; then echo "  ✓ CLI interface (Go + Cobra)"; else echo "  ✗ CLI interface"; fi
-	@if [ -d ui ]; then echo "  ✓ UI extension (TypeScript)"; else echo "  ✗ UI extension"; fi
+	@if [ -d ui/dist ]; then echo "  ✓ UI extension (TypeScript)"; else echo "  ✗ UI extension (not built)"; fi
 	@echo ""
 	@echo "CLI Status:"
 	@if [ -f cmd/cmctl/cmctl ]; then \
