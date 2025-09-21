@@ -90,8 +90,8 @@ install: install.cli install.ui
 
 install.cli:
 	@echo "[INSTALL] Installing ContextMemory CLI..."
-	@if [ -f cmd/cm/cmctl ]; then \
-		cp cmd/cm/cmctl /usr/local/bin/cmctl && echo "[SUCCESS] CLI installed to /usr/local/bin/cmctl"; \
+	@if [ -f cmd/cmctl/cmctl ]; then \
+		cp cmd/cmctl/cmctl /usr/local/bin/cmctl && echo "[SUCCESS] CLI installed to /usr/local/bin/cmctl"; \
 	else \
 		echo "[INFO] CLI not built - run 'make build.cli' first"; \
 	fi
@@ -167,13 +167,13 @@ info.status:
 	@echo "Components:"
 	@if [ -d core ]; then echo "  ✓ Core operations (TypeScript)"; else echo "  ✗ Core operations"; fi
 	@if [ -d storage ]; then echo "  ✓ Storage backend (TypeScript)"; else echo "  ✗ Storage backend"; fi
-	@if [ -f cmd/cm/cmctl ]; then echo "  ✓ CLI interface (Go + Cobra)"; else echo "  ✗ CLI interface"; fi
+	@if [ -f cmd/cmctl/cmctl ]; then echo "  ✓ CLI interface (Go + Cobra)"; else echo "  ✗ CLI interface"; fi
 	@if [ -d ui ]; then echo "  ✓ UI extension (TypeScript)"; else echo "  ✗ UI extension"; fi
 	@echo ""
 	@echo "CLI Status:"
-	@if [ -f cmd/cm/cmctl ]; then \
-		echo "  Binary: cmd/cm/cmctl"; \
-		echo "  Version: $$(cmd/cm/cmctl --version 2>/dev/null | head -1 || echo 'Unknown')"; \
+	@if [ -f cmd/cmctl/cmctl ]; then \
+		echo "  Binary: cmd/cmctl/cmctl"; \
+		echo "  Version: $$(cmd/cmctl/cmctl --version 2>/dev/null | head -1 || echo 'Unknown')"; \
 	else \
 		echo "  ✗ CLI not built"; \
 	fi

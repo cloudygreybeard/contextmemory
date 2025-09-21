@@ -1,6 +1,12 @@
-# ContextMemory v2 - Project specific
+# ContextMemory - Project specific
 storage/data/*.json
 .DS_Store
+
+# Go compiled binaries
+cmd/cmctl/cmctl
+cmd/cmctl/cm
+cmd/*/cmctl
+cmd/*/cm
 
 # Logs
 logs
