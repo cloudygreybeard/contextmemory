@@ -24,15 +24,16 @@ code snippets, and development notes with AI-assisted smart defaults.
 Features:
 - File-based storage (no servers or databases)
 - AI-assisted name and label generation
-- Kubernetes-style labeling system
+- Flexible labeling system for organization
 - Fast search and filtering
+- Multiple output formats (JSON, YAML, JSONPath, Go templates)
 - Cross-platform single binary
 
 Verbosity levels:
 - -v=0 (quiet): Only essential output
 - -v=1 (normal): Standard messages (default)
 - -v=2 (verbose): Debug info and config details`,
-	Version: "0.6.0",
+	Version: "0.6.1",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

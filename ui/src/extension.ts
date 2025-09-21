@@ -73,3 +73,4 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
     console.log('ContextMemory extension deactivated');
 }
+

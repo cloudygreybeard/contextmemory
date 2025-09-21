@@ -13,13 +13,26 @@ var listCmd = &cobra.Command{
 	Short: "List all memories",
 	Long: `List all memories with their basic information.
 
-Example:
-  cmctl list`,
+Examples:
+  cmctl list                              # List memories without IDs
+  cmctl list --show-id                    # List memories with IDs
+  cmctl list -o json                      # Output as JSON
+  cmctl list -o yaml                      # Output as YAML
+  cmctl list -o jsonpath='{.items[*].metadata.name}'     # JSONPath output
+  cmctl list -o go-template='{{range .items}}{{.spec.name}}{{"\n"}}{{end}}'  # Go template`,
 	RunE: runList,
 }
 
+var (
+	showID     bool
+	outputFlag string
+)
+
 func init() {
 	rootCmd.AddCommand(listCmd)
+
+	listCmd.Flags().BoolVar(&showID, "show-id", false, "Show memory IDs in the output")
+	listCmd.Flags().StringVarP(&outputFlag, "output", "o", "", "Output format: table|json|yaml|jsonpath=<template>|go-template=<template>")
 }
 
 func runList(cmd *cobra.Command, args []string) error {
@@ -36,23 +49,18 @@ func runList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to list memories: %w", err)
 	}
 
-	if len(memories) == 0 {
-		fmt.Println("No resources found.")
-		return nil
+	// Parse output format
+	outputOpts, err := ParseOutputFormat(outputFlag)
+	if err != nil {
+		return fmt.Errorf("invalid output format: %w", err)
 	}
 
-	// Print header
-	fmt.Printf("%-40s %-30s %-20s\n", "NAME", "LABELS", "AGE")
-	
-	// Print memories
-	for _, memory := range memories {
-		labels := formatLabelsCompact(memory.Labels)
-		age := formatAge(memory.UpdatedAt)
-		fmt.Printf("%-40s %-30s %-20s\n", 
-			truncateString(memory.Name, 38), 
-			truncateString(labels, 28), 
-			age)
+	// Format and print output
+	output, err := FormatMemoryList(memories, outputOpts, showID)
+	if err != nil {
+		return fmt.Errorf("failed to format output: %w", err)
 	}
 
+	fmt.Print(output)
 	return nil
 }

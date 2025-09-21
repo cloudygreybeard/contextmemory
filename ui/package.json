@@ -2,7 +2,7 @@
   "name": "contextmemory",
   "displayName": "ContextMemory",
   "description": "Clean, simple, file-based memory management for LLM development workflows",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "publisher": "cloudygreybeard",
   "license": "Apache-2.0",
   "repository": {
@@ -82,6 +82,30 @@
         "title": "Check Health",
         "category": "ContextMemory",
         "icon": "$(pulse)"
+      },
+      {
+        "command": "contextmemory.deleteMemory",
+        "title": "Delete Memory",
+        "category": "ContextMemory",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "contextmemory.deleteMemoriesByLabels",
+        "title": "Delete Memories by Labels",
+        "category": "ContextMemory",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "contextmemory.deleteAllMemories",
+        "title": "Delete All Memories",
+        "category": "ContextMemory",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "contextmemory.openConfig",
+        "title": "Open Configuration",
+        "category": "ContextMemory",
+        "icon": "$(settings-gear)"
       }
     ],
     "views": {
@@ -127,6 +151,18 @@
         },
         {
           "command": "contextmemory.health"
+        },
+        {
+          "command": "contextmemory.deleteMemory"
+        },
+        {
+          "command": "contextmemory.deleteMemoriesByLabels"
+        },
+        {
+          "command": "contextmemory.deleteAllMemories"
+        },
+        {
+          "command": "contextmemory.openConfig"
         }
       ],
       "editor/context": [
@@ -163,6 +199,11 @@
           "command": "contextmemory.openMemory",
           "when": "view == contextmemory.memories && viewItem == memory",
           "group": "navigation@1"
+        },
+        {
+          "command": "contextmemory.deleteMemory",
+          "when": "view == contextmemory.memories && viewItem == memory",
+          "group": "navigation@2"
         }
       ]
     },
@@ -204,6 +245,11 @@
           },
           "default": [],
           "description": "Default labels to apply to new memories"
+        },
+        "contextmemory.showMemoryIds": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show memory IDs when listing memories"
         }
       }
     }
@@ -231,3 +277,4 @@
   },
   "dependencies": {}
 }
+

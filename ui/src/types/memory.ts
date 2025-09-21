@@ -39,6 +39,7 @@ export interface CMCtlConfig {
     storageDir?: string;
     provider: string;
     verbosity: number;
+    showMemoryIds: boolean;
 }
 
 export interface MemoryTreeItem {
@@ -55,3 +56,4 @@ export enum MemoryCategory {
     ByLanguage = 'byLanguage',
     ByProject = 'byProject'
 }
+

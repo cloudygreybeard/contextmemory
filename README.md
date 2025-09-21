@@ -2,7 +2,7 @@
 
 > Clean, simple, file-based memory management for LLM development workflows
 
-[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/cloudygreybeard/contextmemory)
+[![Version](https://img.shields.io/badge/version-0.6.1-blue.svg)](https://github.com/cloudygreybeard/contextmemory)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/cloudygreybeard/contextmemory/blob/main/LICENSE)
 
 ## Overview
@@ -11,7 +11,7 @@ ContextMemory transforms development conversations into a searchable knowledge b
 
 **Key Features:**
 - **Multiple storage options** - File-based (current), cloud storage (planned), remote APIs (planned)
-- **Professional CLI** - `cmctl` with kubectl-style output and verbosity controls
+- **Professional CLI** - `cmctl` with flexible output formats and verbosity controls
 - **AI-assisted defaults** - Smart name and label generation  
 - **Extensible architecture** - Provider system for different storage backends
 - **Cross-platform** - Single Go binary for CLI operations
@@ -30,6 +30,12 @@ echo "Meeting notes..." | cmctl create --name "Sprint Planning" --labels "type=m
 cmctl list
 cmctl search --query "authentication" --labels "type=code"
 cmctl get <memory-id>
+
+# Advanced features
+cmctl list --show-id              # Display memory IDs
+cmctl list -o json                # JSON output for scripting
+cmctl delete --labels "type=test" # Delete memories by criteria
+cmctl search -q "auth" -o yaml    # Search with YAML output
 
 # Provider options
 cmctl --provider file health      # Local file storage (default)
@@ -56,7 +62,8 @@ contextmemory/
 
 **Production CLI (`cmctl`):**
 - Go with Cobra framework for professional command-line experience
-- kubectl-style output with verbosity controls (`-v` flag)
+- Multiple output formats (table, JSON, YAML, JSONPath, Go templates)
+- Flexible verbosity controls (`-v` flag) and configuration options
 - Cross-platform single binary, fast startup
 - Extensible provider architecture (file, cloud, remote)
 
@@ -82,15 +89,33 @@ cmctl create --name "Code Review" --file "./notes.md" --labels "type=review,lang
 
 # List and search
 cmctl list                                    # Show all memories
+cmctl list --show-id                         # Include memory IDs
 cmctl list --labels "type=meeting"           # Filter by labels
 cmctl search --query "authentication"        # Full-text search
 cmctl search --labels "type=code,lang=go"    # Search with label filters
 
 # Retrieve and manage
 cmctl get <memory-id>                         # Get specific memory
-cmctl get <memory-id> --output json          # JSON output
-cmctl health                                  # Check system health
-cmctl info                                    # Show storage info
+cmctl get <memory-id> -o json                # JSON output
+cmctl delete <memory-id>                     # Delete specific memory
+cmctl delete --labels "type=test"           # Delete by criteria
+cmctl delete --all                          # Delete all memories
+cmctl health                                 # Check system health
+cmctl info                                   # Show storage info
+```
+
+### Output Formats
+
+```bash
+# Multiple output formats for scripting and data extraction
+cmctl list -o json                          # JSON format
+cmctl list -o yaml                          # YAML format
+cmctl list -o jsonpath='{.items[*].name}'   # Extract specific fields
+cmctl get mem_123 -o go-template='{{.spec.content}}'  # Custom templates
+
+# Advanced JSONPath examples
+cmctl list -o jsonpath='{.items[?(@.labels.type=="test")].name}'  # Filter results
+cmctl search -q "auth" -o jsonpath='{.items[*].id}'               # Get matching IDs
 ```
 
 ### Verbosity Controls
@@ -135,6 +160,10 @@ cursor --install-extension ui/contextmemory-0.6.0.vsix
 - `ContextMemory: Create Memory from Current Chat` - Create from chat/markdown file
 - `ContextMemory: Search Memories` - Search existing memories
 - `ContextMemory: List All Memories` - Browse all memories
+- `ContextMemory: Delete Memory` - Delete specific memory
+- `ContextMemory: Delete Memories by Labels` - Bulk delete by criteria
+- `ContextMemory: Delete All Memories` - Delete all memories (with confirmation)
+- `ContextMemory: Open Configuration` - Manage extension settings
 - `ContextMemory: Check Health` - Verify CLI connectivity
 
 **Tree View:**
@@ -145,16 +174,23 @@ cursor --install-extension ui/contextmemory-0.6.0.vsix
 **Context Menus:**
 - Right-click selected code → "Create Memory from Selection"
 - Right-click .md files → "Create Memory from Current Chat"
+- Right-click memories in tree view → "Delete Memory"
 
 **Configuration:**
 ```json
 {
   "contextmemory.cliPath": "cmctl",
+  "contextmemory.storageDir": "~/.contextmemory",
   "contextmemory.provider": "file", 
   "contextmemory.verbosity": 1,
-  "contextmemory.autoSuggestLabels": true
+  "contextmemory.autoSuggestLabels": true,
+  "contextmemory.showMemoryIds": false,
+  "contextmemory.defaultLabels": []
 }
 ```
+
+All settings can be configured through the VS Code settings UI or via the 
+`ContextMemory: Open Configuration` command for an interactive editor.
 
 ## Installation & Development
 
@@ -210,10 +246,13 @@ ContextMemory uses `~/.contextmemory/` for storage and configuration:
 
 ✅ **Current (v0.6.0):**
 - File-based storage with full CRUD operations
-- CLI tool (`cmctl`) with kubectl-style output  
+- Professional CLI (`cmctl`) with multiple output formats (JSON, YAML, JSONPath, Go templates)
+- Memory deletion with flexible criteria (ID, labels, bulk operations)
+- Optional memory ID display for advanced operations
 - AI-assisted name and label generation
 - Cross-platform Go binary (macOS, Linux, Windows)
-- VS Code extension with tree view and commands
+- VS Code extension with comprehensive management capabilities
+- Interactive configuration editor for all settings
 - Extensible provider architecture foundation
 
 🚧 **Planned:**
@@ -225,4 +264,4 @@ ContextMemory uses `~/.contextmemory/` for storage and configuration:
 
 ---
 
-**Version 0.6.0** - Initial release with file-based storage and VS Code integration.
+**Version 0.6.1** - Enhanced with deletion capabilities, output formats, configuration editor, and improved documentation.
