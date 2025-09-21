@@ -47,7 +47,7 @@ contextmemory/
 │   └── internal/      # Storage providers and utilities
 ├── core/              # Core memory operations (TypeScript)
 ├── storage/           # File-based storage backend (TypeScript)  
-├── ui/                # VS Code extension UI (TypeScript, future)
+├── ui/                # VS Code extension (TypeScript)
 ├── Makefile          # Development automation
 └── README.md
 ```
@@ -62,7 +62,7 @@ contextmemory/
 
 **TypeScript Components:**
 - Core memory operations and AI assistant
-- VS Code extension (planned)
+- VS Code extension with tree view and command integration
 - Legacy CLI for development/testing
 
 **Storage Providers:**
@@ -110,6 +110,52 @@ cmctl --provider gcs health       # Google Cloud Storage
 cmctl --provider remote health    # HTTP API backend
 ```
 
+## VS Code Extension
+
+The extension integrates ContextMemory into your development workflow:
+
+### Installation
+
+```bash
+# Build and package extension
+make build.ui && make package.ui
+
+# Install in VS Code
+code --install-extension ui/contextmemory-0.6.0.vsix
+
+# Or install in Cursor  
+cursor --install-extension ui/contextmemory-0.6.0.vsix
+```
+
+### Extension Features
+
+**Command Palette:**
+- `ContextMemory: Create Memory` - Create new memory
+- `ContextMemory: Create Memory from Selection` - Create from selected code
+- `ContextMemory: Create Memory from Current Chat` - Create from chat/markdown file
+- `ContextMemory: Search Memories` - Search existing memories
+- `ContextMemory: List All Memories` - Browse all memories
+- `ContextMemory: Check Health` - Verify CLI connectivity
+
+**Tree View:**
+- Browse memories by category (Recent, Type, Language, Project)
+- Click to open memory in editor
+- Automatic categorization based on labels
+
+**Context Menus:**
+- Right-click selected code → "Create Memory from Selection"
+- Right-click .md files → "Create Memory from Current Chat"
+
+**Configuration:**
+```json
+{
+  "contextmemory.cliPath": "cmctl",
+  "contextmemory.provider": "file", 
+  "contextmemory.verbosity": 1,
+  "contextmemory.autoSuggestLabels": true
+}
+```
+
 ## Installation & Development
 
 ### Installation
@@ -123,6 +169,11 @@ make build
 # Install CLI globally  
 make install.cli    # Installs cmctl to /usr/local/bin/
 
+# Build and install VS Code extension
+make build.ui       # Compile TypeScript extension  
+make package.ui     # Create .vsix package
+make install.ui     # Install in VS Code/Cursor
+
 # Verify installation
 cmctl --version     # Should show: cmctl version 0.6.0
 ```
@@ -135,6 +186,10 @@ make setup          # Initialize dependencies and structure
 make build          # Build Go CLI + TypeScript components  
 make install.cli    # Install CLI locally
 make info.status    # Check project status
+
+# Extension development  
+make build.ui       # Compile extension TypeScript
+make package.ui     # Create installable .vsix package
 
 # Development iteration
 make dev.iterate    # Quick build and install cycle
