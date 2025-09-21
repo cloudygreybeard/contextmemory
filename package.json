@@ -1,0 +1,39 @@
+{
+  "name": "contextmemory",
+  "version": "0.6.0",
+  "description": "Clean, simple, file-based memory management for LLM development workflows",
+  "main": "dist/core/memory.js",
+  "bin": {
+    "cm": "dist/cli/cm.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "echo \"Tests will be implemented\" && exit 0",
+    "clean": "rm -rf dist",
+    "lint": "echo \"Linting will be implemented\" && exit 0"
+  },
+  "keywords": [
+    "memory",
+    "context",
+    "llm",
+    "ai",
+    "development",
+    "session",
+    "file-based",
+    "local"
+  ],
+  "author": "",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
