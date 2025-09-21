@@ -1,6 +1,8 @@
 # ContextMemory - Project specific
 storage/data/*.json
 .DS_Store
+*.vsix
+test-extension.md
 
 # Go compiled binaries
 cmd/cmctl/cmctl

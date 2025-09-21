@@ -15,16 +15,19 @@ var searchCmd = &cobra.Command{
 	Long: `Search memories by text query and/or label selectors.
 
 Examples:
-  cmctl search --query "authentication"
-  cmctl search --labels "type=session"
-  cmctl search --query "API" --labels "type=code" --limit 5`,
+  cmctl search --query "authentication"                        # Search by text
+  cmctl search --labels "type=session"                         # Search by labels
+  cmctl search --query "API" --labels "type=code" --limit 5    # Combined search
+  cmctl search --query "auth" -o json                          # JSON output
+  cmctl search -q "session" -o jsonpath='{.items[*].spec.name}' # Extract names`,
 	RunE: runSearch,
 }
 
 var (
-	searchQuery  string
-	searchLabels string
-	searchLimit  int
+	searchQuery      string
+	searchLabels     string
+	searchLimit      int
+	searchOutputFlag string
 )
 
 func init() {
@@ -33,6 +36,7 @@ func init() {
 	searchCmd.Flags().StringVarP(&searchQuery, "query", "q", "", "Text search query")
 	searchCmd.Flags().StringVarP(&searchLabels, "labels", "l", "", "Label selector (format: key1=value1,key2=value2)")
 	searchCmd.Flags().IntVar(&searchLimit, "limit", 10, "Limit results")
+	searchCmd.Flags().StringVarP(&searchOutputFlag, "output", "o", "", "Output format: table|json|yaml|jsonpath=<template>|go-template=<template>")
 }
 
 func runSearch(cmd *cobra.Command, args []string) error {
@@ -68,29 +72,18 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to search memories: %w", err)
 	}
 
-	if len(result.Memories) == 0 {
-		fmt.Println("No resources found.")
-		return nil
+	// Parse output format
+	outputOpts, err := ParseOutputFormat(searchOutputFlag)
+	if err != nil {
+		return fmt.Errorf("invalid output format: %w", err)
 	}
 
-	// Print header
-	fmt.Printf("%-40s %-25s %-15s %s\n", "NAME", "LABELS", "AGE", "PREVIEW")
-	
-	// Print matching memories
-	for _, memory := range result.Memories {
-		labels := formatLabelsCompact(memory.Labels)
-		age := formatAge(memory.UpdatedAt)
-		preview := memory.Content
-		if len(preview) > 50 {
-			preview = preview[:50] + "..."
-		}
-		
-		fmt.Printf("%-40s %-25s %-15s %s\n", 
-			truncateString(memory.Name, 38), 
-			truncateString(labels, 23),
-			age,
-			truncateString(preview, 50))
+	// Format and print output
+	output, err := FormatMemoryList(result.Memories, outputOpts, false)
+	if err != nil {
+		return fmt.Errorf("failed to format output: %w", err)
 	}
 
+	fmt.Print(output)
 	return nil
 }

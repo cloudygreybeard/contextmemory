@@ -5,6 +5,8 @@ go 1.24.6
 require (
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
+	gopkg.in/yaml.v3 v3.0.1
+	k8s.io/client-go v0.29.0
 )
 
 require (

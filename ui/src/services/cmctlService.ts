@@ -31,7 +31,8 @@ export class CMCtlService implements vscode.Disposable {
             cliPath: config.get<string>('cliPath', 'cmctl'),
             storageDir: config.get<string>('storageDir', ''),
             provider: config.get<string>('provider', 'file'),
-            verbosity: config.get<number>('verbosity', 1)
+            verbosity: config.get<number>('verbosity', 1),
+            showMemoryIds: config.get<boolean>('showMemoryIds', false)
         };
     }
 
@@ -128,8 +129,14 @@ export class CMCtlService implements vscode.Disposable {
 
         const command = this.buildCommand('create', args);
         
-        // Pass content through stdin
-        const fullCommand = `echo "${request.content.replace(/"/g, '\\"')}" | ${command}`;
+        // Pass content through stdin, properly escape for shell
+        const escapedContent = request.content
+            .replace(/\\/g, '\\\\')  // Escape backslashes first
+            .replace(/"/g, '\\"')    // Escape quotes
+            .replace(/\$/g, '\\$')   // Escape dollar signs
+            .replace(/`/g, '\\`');   // Escape backticks
+        
+        const fullCommand = `echo "${escapedContent}" | ${command}`;
         
         const output = await this.executeCommand(fullCommand);
         
@@ -185,10 +192,17 @@ export class CMCtlService implements vscode.Disposable {
      * List all memories
      */
     async listMemories(): Promise<Memory[]> {
-        const command = this.buildCommand('list');
+        const args: string[] = [];
+        
+        // Add --show-id flag if configured
+        if (this.config.showMemoryIds) {
+            args.push('--show-id');
+        }
+        
+        const command = this.buildCommand('list', args);
         const output = await this.executeCommand(command);
         
-        if (!output || output.includes('No memories found')) {
+        if (!output || output.includes('No resources found')) {
             return [];
         }
         
@@ -197,13 +211,38 @@ export class CMCtlService implements vscode.Disposable {
         
         for (const line of lines) {
             if (line.trim()) {
-                // Parse table format: NAME    LABELS    AGE
+                // Parse table format based on whether IDs are shown
                 const parts = line.split(/\s{2,}/); // Split on multiple spaces
-                if (parts.length >= 2) {
+                
+                if (this.config.showMemoryIds && parts.length >= 3) {
+                    // Format: ID    NAME    LABELS    AGE
+                    const id = parts[0].trim();
+                    const name = parts[1].trim();
+                    const labelsStr = parts[2].trim();
+                    
+                    const labels: Record<string, string> = {};
+                    if (labelsStr && labelsStr !== '-') {
+                        labelsStr.split(',').forEach(labelPair => {
+                            const [key, value] = labelPair.split('=');
+                            if (key && value) {
+                                labels[key.trim()] = value.trim();
+                            }
+                        });
+                    }
+                    
+                    memories.push({
+                        id,
+                        name,
+                        content: '', // Would need separate get call for full content
+                        labels,
+                        created: '',
+                        updated: ''
+                    });
+                } else if (!this.config.showMemoryIds && parts.length >= 2) {
+                    // Format: NAME    LABELS    AGE
                     const name = parts[0].trim();
                     const labelsStr = parts[1].trim();
                     
-                    // For list, we only have basic info, would need to fetch full details
                     const labels: Record<string, string> = {};
                     if (labelsStr && labelsStr !== '-') {
                         labelsStr.split(',').forEach(labelPair => {
@@ -299,6 +338,71 @@ export class CMCtlService implements vscode.Disposable {
     }
 
     /**
+     * Delete a memory by ID
+     */
+    async deleteMemory(memoryId: string, force: boolean = false): Promise<void> {
+        const args = ['delete', memoryId];
+        if (force) {
+            args.push('--force');
+        }
+        const command = this.buildCommand('', args);
+        await this.executeCommand(command);
+    }
+
+    /**
+     * Delete memories by label selector
+     */
+    async deleteMemoriesByLabels(labelSelector: string, force: boolean = false): Promise<void> {
+        const args = ['delete', '--labels', labelSelector];
+        if (force) {
+            args.push('--force');
+        }
+        const command = this.buildCommand('', args);
+        await this.executeCommand(command);
+    }
+
+    /**
+     * Delete all memories
+     */
+    async deleteAllMemories(force: boolean = false): Promise<void> {
+        const args = ['delete', '--all'];
+        if (force) {
+            args.push('--force');
+        }
+        const command = this.buildCommand('', args);
+        await this.executeCommand(command);
+    }
+
+    /**
+     * Get current configuration
+     */
+    async getConfig(): Promise<any> {
+        // For now, return the VS Code configuration
+        // Later we can extend this to read the actual cmctl config file
+        const config = vscode.workspace.getConfiguration('contextmemory');
+        return {
+            cliPath: config.get('cliPath'),
+            storageDir: config.get('storageDir'),
+            provider: config.get('provider'),
+            verbosity: config.get('verbosity'),
+            autoSuggestLabels: config.get('autoSuggestLabels'),
+            defaultLabels: config.get('defaultLabels'),
+            showMemoryIds: config.get('showMemoryIds')
+        };
+    }
+
+    /**
+     * Update configuration
+     */
+    async updateConfig(configUpdates: any): Promise<void> {
+        const config = vscode.workspace.getConfiguration('contextmemory');
+        for (const [key, value] of Object.entries(configUpdates)) {
+            await config.update(key, value, vscode.ConfigurationTarget.Global);
+        }
+        this.config = this.loadConfig(); // Reload config
+    }
+
+    /**
      * Show output channel for debugging
      */
     showOutputChannel(): void {
@@ -309,3 +413,4 @@ export class CMCtlService implements vscode.Disposable {
         this.outputChannel.dispose();
     }
 }
+

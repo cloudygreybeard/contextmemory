@@ -13,14 +13,23 @@ var getCmd = &cobra.Command{
 	Short: "Get memory by ID",
 	Long: `Retrieve and display a memory by its ID.
 
-Example:
-  cmctl get mem_abc123_def456`,
+Examples:
+  cmctl get mem_abc123_def456                    # Display memory in table format
+  cmctl get mem_abc123_def456 -o json           # Output as JSON
+  cmctl get mem_abc123_def456 -o yaml           # Output as YAML
+  cmctl get mem_abc123_def456 -o jsonpath='{.spec.content}'  # Extract content using JSONPath`,
 	Args: cobra.ExactArgs(1),
 	RunE: runGet,
 }
 
+var (
+	getOutputFlag string
+)
+
 func init() {
 	rootCmd.AddCommand(getCmd)
+
+	getCmd.Flags().StringVarP(&getOutputFlag, "output", "o", "", "Output format: table|json|yaml|jsonpath=<template>|go-template=<template>")
 }
 
 func runGet(cmd *cobra.Command, args []string) error {
@@ -43,15 +52,18 @@ func runGet(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("memory not found: %s", memoryID)
 	}
 
-	// Display memory
-	fmt.Printf("Name:\t\t%s\n", memory.Name)
-	fmt.Printf("ID:\t\t%s\n", memory.ID)
-	fmt.Printf("Labels:\t\t%s\n", formatLabels(memory.Labels))
-	fmt.Printf("Created:\t%s\n", memory.CreatedAt.Format("2006-01-02T15:04:05Z"))
-	fmt.Printf("Updated:\t%s\n", memory.UpdatedAt.Format("2006-01-02T15:04:05Z"))
-	fmt.Printf("\nContent:\n")
-	fmt.Printf("--------\n")
-	fmt.Println(memory.Content)
+	// Parse output format
+	outputOpts, err := ParseOutputFormat(getOutputFlag)
+	if err != nil {
+		return fmt.Errorf("invalid output format: %w", err)
+	}
 
+	// Format and print output
+	output, err := FormatSingleMemory(memory, outputOpts)
+	if err != nil {
+		return fmt.Errorf("failed to format output: %w", err)
+	}
+
+	fmt.Print(output)
 	return nil
 }
