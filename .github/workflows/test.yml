@@ -85,8 +85,17 @@ jobs:
       - name: Install dependencies
         run: cd ui && npm ci
 
+      - name: Set up virtual display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+
       - name: Run tests
         run: cd ui && npm test
+        env:
+          DISPLAY: :99
 
       - name: Build extension
         run: make build.ui
