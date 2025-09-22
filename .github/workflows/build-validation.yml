@@ -50,7 +50,12 @@ jobs:
           echo "Extension packaged successfully"
 
       - name: Run integration tests
-        run: make test.integration
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            echo "Integration tests skipped on Windows (requires bash)"
+          else
+            make test.integration
+          fi
 
       - name: Validate release readiness
         run: |

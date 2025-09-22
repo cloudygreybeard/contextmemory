@@ -104,7 +104,7 @@ func TestGetNonExistentMemory(t *testing.T) {
 
 	_, err = fs.Get("nonexistent")
 	if err == nil {
-		t.Error("Expected error for nonexistent memory")
+		t.Fatal("Expected error for nonexistent memory")
 	}
 }
 
@@ -166,7 +166,7 @@ func TestDeleteMemory(t *testing.T) {
 	// Verify it's gone
 	_, err = fs.Get(created.ID)
 	if err == nil {
-		t.Error("Expected error when getting deleted memory")
+		t.Fatal("Expected error when getting deleted memory")
 	}
 }
 
