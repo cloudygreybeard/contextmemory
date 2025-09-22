@@ -58,7 +58,15 @@ setup:
 	@echo "[SUCCESS] Development environment ready"
 
 # Build all components
-build: build.core build.storage build.cli build.ui
+build: deps build.core build.storage build.cli build.ui
+
+# Install dependencies
+deps:
+	@echo "[DEPS] Installing dependencies..."
+	@if [ -f package.json ] && [ ! -d node_modules ]; then \
+		echo "[DEPS] Installing root dependencies..."; \
+		npm install; \
+	fi
 
 build.core:
 	@echo "[BUILD] Building core memory operations..."
@@ -111,7 +119,12 @@ build.cli.all:
 build.ui:
 	@echo "[BUILD] Building VS Code extension..."
 	@if [ -d ui ] && [ -f ui/package.json ]; then \
-		cd ui && npm run compile && echo "Extension compiled successfully"; \
+		cd ui && \
+		if [ ! -d node_modules ]; then \
+			echo "[BUILD] Installing UI dependencies..."; \
+			npm install; \
+		fi && \
+		npm run compile && echo "Extension compiled successfully"; \
 	else \
 		echo "UI directory or package.json not found"; \
 	fi
@@ -126,6 +139,10 @@ package.ui:
 	@echo "[PACKAGE] Creating extension package..."
 	@if [ -d ui ] && [ -f ui/package.json ]; then \
 		cd ui && \
+		if [ ! -d node_modules ]; then \
+			echo "[PACKAGE] Installing UI dependencies..."; \
+			npm install; \
+		fi && \
 		if [ ! -d dist ]; then \
 			echo "[BUILD] Compiling extension first..."; \
 			npm run compile; \
@@ -160,13 +177,7 @@ install.ui:
 	fi
 
 # Create extension package
-package:
-	@echo "[PACKAGE] Creating extension package..."
-	@if [ -d ui ] && [ -f ui/package.json ]; then \
-		cd ui && npm run package && echo "[SUCCESS] Package created"; \
-	else \
-		echo "[INFO] UI not ready for packaging"; \
-	fi
+package: package.ui
 
 # Testing
 test: test.core test.storage test.ui
