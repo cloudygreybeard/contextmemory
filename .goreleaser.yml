@@ -34,22 +34,23 @@ builds:
       - -X github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd.commit={{.Commit}}
       - -X github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd.date={{.Date}}
 
-  # WebAssembly build for VS Code extension embedding
-  - id: cmctl-wasm
-    dir: ./cmd/cmctl
-    main: .
-    binary: cmctl
-    env:
-      - CGO_ENABLED=0
-      - GOOS=js
-      - GOARCH=wasm
-    goos:
-      - js
-    goarch:
-      - wasm
-    ldflags:
-      - -s -w
-      - -X github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd.version={{.Version}}
+  # WebAssembly build disabled due to SQLite incompatibility
+  # See docs/WEBASSEMBLY_LIMITATION.md for details
+  # - id: cmctl-wasm
+  #   dir: ./cmd/cmctl
+  #   main: .
+  #   binary: cmctl
+  #   env:
+  #     - CGO_ENABLED=0
+  #     - GOOS=js
+  #     - GOARCH=wasm
+  #   goos:
+  #     - js
+  #   goarch:
+  #     - wasm
+  #   ldflags:
+  #     - -s -w
+  #     - -X github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd.version={{.Version}}
 
 archives:
   - id: standard
@@ -72,19 +73,19 @@ archives:
       - LICENSE
       - CONTRIBUTING.md
 
-  # Special handling for WebAssembly
-  - id: wasm
-    builds:
-      - cmctl-wasm
-    format: tar.gz
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- .Version }}_
-      WebAssembly
-    files:
-      - README.md
-      - LICENSE
-      - ui/src/wasm/wasm_exec.js
+  # WebAssembly archive disabled due to SQLite incompatibility
+  # - id: wasm
+  #   builds:
+  #     - cmctl-wasm
+  #   format: tar.gz
+  #   name_template: >-
+  #     {{ .ProjectName }}_
+  #     {{- .Version }}_
+  #     WebAssembly
+  #   files:
+  #     - README.md
+  #     - LICENSE
+  #     - ui/src/wasm/wasm_exec.js
 
 checksum:
   name_template: 'checksums.txt'
