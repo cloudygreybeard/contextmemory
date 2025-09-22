@@ -76,7 +76,7 @@ func deleteMemoryByID(fs *storage.FileStorage, memoryID string, verbosity int) e
 		if verbosity >= 1 {
 			fmt.Printf("Are you sure you want to delete memory '%s'? (y/N): ", memory.Name)
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response) // Ignore error - treat as 'no' if input fails
 			if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
 				fmt.Println("Delete cancelled")
 				return nil
@@ -114,7 +114,7 @@ func deleteAllMemories(fs *storage.FileStorage, verbosity int) error {
 		if verbosity >= 1 {
 			fmt.Printf("Are you sure you want to delete ALL %d memories? This cannot be undone! (y/N): ", len(memories))
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response) // Ignore error - treat as 'no' if input fails
 			if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
 				fmt.Println("Delete cancelled")
 				return nil
@@ -177,7 +177,7 @@ func deleteMemoriesByLabels(fs *storage.FileStorage, labelSelector string, verbo
 			}
 			fmt.Print("Are you sure you want to delete these memories? (y/N): ")
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response) // Ignore error - treat as 'no' if input fails
 			if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
 				fmt.Println("Delete cancelled")
 				return nil

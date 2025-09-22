@@ -3,8 +3,10 @@ package cursor
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // AIServicePrompt represents the structure of aiService.prompts data
@@ -62,14 +64,6 @@ func (wr *WorkspaceReader) parseAIServicePromptsWithTitles(value string, compose
 	return []ChatTab{*chatTab}, nil
 }
 
-// parseAIServicePrompts converts aiService.prompts data to ChatTab format (legacy)
-func (wr *WorkspaceReader) parseAIServicePrompts(value string) ([]ChatTab, error) {
-	chatTab, err := wr.parseAIServicePromptsToSingleChat(value)
-	if err != nil {
-		return nil, err
-	}
-	return []ChatTab{*chatTab}, nil
-}
 
 // parseAIServicePromptsToSingleChat is the core logic for parsing aiService.prompts
 func (wr *WorkspaceReader) parseAIServicePromptsToSingleChat(value string) (*ChatTab, error) {
@@ -147,7 +141,7 @@ func (wr *WorkspaceReader) parseComposerData(value string) ([]ChatTab, error) {
 		if title == "" {
 			title = "Composer Chat"
 			if composer.UnifiedMode != "" {
-				title = fmt.Sprintf("%s Chat", strings.Title(composer.UnifiedMode))
+				title = fmt.Sprintf("%s Chat", cases.Title(language.English, cases.NoLower).String(composer.UnifiedMode))
 			}
 		}
 

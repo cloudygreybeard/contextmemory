@@ -13,6 +13,3 @@ func GenerateID() string {
 	return fmt.Sprintf("mem_%x_%06x", timestamp, random)
 }
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}

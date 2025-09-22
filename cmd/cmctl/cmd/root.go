@@ -51,9 +51,16 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&verbosity, "verbosity", "v", 1, "verbosity level (0=quiet, 1=normal, 2=verbose)")
 
 	// Bind flags to viper
-	viper.BindPFlag("storage-dir", rootCmd.PersistentFlags().Lookup("storage-dir"))
-	viper.BindPFlag("provider", rootCmd.PersistentFlags().Lookup("provider"))
-	viper.BindPFlag("verbosity", rootCmd.PersistentFlags().Lookup("verbosity"))
+	if err := viper.BindPFlag("storage-dir", rootCmd.PersistentFlags().Lookup("storage-dir")); err != nil {
+		// This should never happen for flags we define ourselves
+		panic(fmt.Sprintf("failed to bind storage-dir flag: %v", err))
+	}
+	if err := viper.BindPFlag("provider", rootCmd.PersistentFlags().Lookup("provider")); err != nil {
+		panic(fmt.Sprintf("failed to bind provider flag: %v", err))
+	}
+	if err := viper.BindPFlag("verbosity", rootCmd.PersistentFlags().Lookup("verbosity")); err != nil {
+		panic(fmt.Sprintf("failed to bind verbosity flag: %v", err))
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.

@@ -9,6 +9,8 @@ import (
 	"github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var (
@@ -186,7 +188,7 @@ func generateChatMemoryName(chatTab *cursor.ChatTab) string {
 					if len(firstSentence) > 60 {
 						firstSentence = firstSentence[:57] + "..."
 					}
-					return strings.Title(strings.ToLower(firstSentence))
+					return cases.Title(language.English, cases.NoLower).String(strings.ToLower(firstSentence))
 				}
 			}
 		}
@@ -197,9 +199,9 @@ func generateChatMemoryName(chatTab *cursor.ChatTab) string {
 	if len(concepts) > 0 {
 		primaryConcept := concepts[0]
 		if len(concepts) > 1 {
-			return fmt.Sprintf("%s Development Discussion", strings.Title(primaryConcept))
+			return fmt.Sprintf("%s Development Discussion", cases.Title(language.English, cases.NoLower).String(primaryConcept))
 		}
-		return fmt.Sprintf("%s Chat", strings.Title(primaryConcept))
+		return fmt.Sprintf("%s Chat", cases.Title(language.English, cases.NoLower).String(primaryConcept))
 	}
 
 	// Fallback to date-based naming
