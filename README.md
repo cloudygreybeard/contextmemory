@@ -2,7 +2,9 @@
 
 > Clean, simple, file-based memory management for LLM development workflows
 
-[![Version](https://img.shields.io/badge/version-0.6.1-blue.svg)](https://github.com/cloudygreybeard/contextmemory)
+[![Version](https://img.shields.io/badge/version-0.6.3-blue.svg)](https://github.com/cloudygreybeard/contextmemory)
+[![CI](https://github.com/cloudygreybeard/contextmemory/workflows/Test/badge.svg)](https://github.com/cloudygreybeard/contextmemory/actions)
+[![Build](https://github.com/cloudygreybeard/contextmemory/workflows/Build%20Validation/badge.svg)](https://github.com/cloudygreybeard/contextmemory/actions)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://github.com/cloudygreybeard/contextmemory/blob/main/LICENSE)
 
 ## Overview
@@ -213,7 +215,7 @@ make package.ui     # Create .vsix package
 make install.ui     # Install in VS Code/Cursor
 
 # Verify installation
-cmctl --version     # Should show: cmctl version 0.6.0
+cmctl --version     # Should show: cmctl version 0.6.3
 ```
 
 ### Development Workflow
@@ -225,13 +227,51 @@ make build          # Build Go CLI + TypeScript components
 make install.cli    # Install CLI locally
 make info.status    # Check project status
 
+# Running tests
+make test           # Run all tests
+make test.cli       # Run Go unit tests
+make test.cli.coverage  # Run Go tests with coverage
+make test.ui        # Run VS Code extension tests
+make test.integration   # Run full integration tests
+make lint           # Check code quality
+
 # Extension development  
 make build.ui       # Compile extension TypeScript
 make package.ui     # Create installable .vsix package
 
 # Development iteration
 make dev.iterate    # Quick build and install cycle
+
+# Release workflow validation
+make validate.release   # Validate release readiness
 ```
+
+### CI/CD Workflows
+
+Our GitHub Actions workflows ensure quality and automated releases:
+
+**🔄 Continuous Integration:**
+- **Test Workflow**: Runs on pushes to `main`, `feature/*`, `fix/*`, `hotfix/*` and PRs
+  - Go testing across versions (1.20, 1.21) with coverage reporting
+  - Multi-architecture builds (Linux, macOS, Windows, ARM64, WebAssembly)
+  - VS Code extension testing and packaging
+  - Integration tests across OS matrix
+
+- **Build Validation**: Comprehensive build verification on all pushes
+  - Full clean builds and CLI verification
+  - Version consistency checking across components
+  - Release readiness validation
+
+**🚀 Automated Releases:**
+- **Release Workflow**: Triggered on `v*` tags
+  - GoReleaser for multi-platform CLI binaries
+  - Automated VS Code Marketplace publishing
+  - GitHub release creation with assets
+
+**📊 Quality Assurance:**
+- Coverage reporting via Codecov
+- Dependency caching for faster builds
+- Modern GitHub Actions with proper error handling
 
 ### Configuration
 
@@ -246,7 +286,7 @@ ContextMemory uses `~/.contextmemory/` for storage and configuration:
 
 ## Features
 
-**Current (v0.6.0):**
+**Current (v0.6.3):**
 - File-based storage with full CRUD operations
 - Professional CLI (`cmctl`) with multiple output formats (JSON, YAML, JSONPath, Go templates)
 - Memory deletion with flexible criteria (ID, labels, bulk operations)
