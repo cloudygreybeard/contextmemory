@@ -12,39 +12,55 @@
 ContextMemory transforms development conversations into a searchable knowledge base. Store session contexts, code snippets, and development notes with AI-assisted smart defaults.
 
 **Key Features:**
-- **Multiple storage options** - File-based (current), cloud storage (planned), remote APIs (planned)
+- **Cursor AI Chat Integration** - Direct capture from AI pane with one-click workflow
+- **Intelligent Conversation Analysis** - AI naming, language detection, topic extraction  
+- **Instant Search** - Find any discussion: "debugging session", "React hooks", "authentication error"
 - **Professional CLI** - `cmctl` with flexible output formats and verbosity controls
-- **AI-assisted defaults** - Smart name and label generation  
+- **Cross-platform** - Single Go binary for CLI operations (macOS, Linux, Windows, ARM64)
+- **IDE integration** - VS Code/Cursor extension with tree view and commands
+- **Multiple storage options** - File-based (current), cloud storage (planned), remote APIs (planned)
 - **Extensible architecture** - Provider system for different storage backends
-- **Cross-platform** - Single Go binary for CLI operations
-- **IDE integration** - VS Code extension with automatic version compatibility checking
-- **Version safety** - Minor version compatibility policy ensures reliable UI-CLI interaction
 
 ## Quick Start
 
+### **Capture Cursor AI Conversations**
+The easiest way to get started - transform your Cursor AI chats into searchable memories:
+
 ```bash
-# Install
+# Install ContextMemory
 git clone https://github.com/cloudygreybeard/contextmemory.git
 cd contextmemory
 make build && make install.cli
 
-# Basic usage
+# 1. CAPTURE YOUR CURSOR CHATS (Key Feature!)
+cmctl import-cursor-chat --latest                    # Import your most recent AI conversation
+cmctl list-cursor-chats                             # See all available chats
+cmctl import-cursor-chat --tab-id abc123            # Import specific chat
+cmctl import-cursor-chat --preview                  # Preview before importing
+
+# 2. SEARCH YOUR CAPTURED CONVERSATIONS  
+cmctl search --query "authentication error"         # Find that debugging session
+cmctl search --query "React hooks" --labels "type=chat"
+cmctl get --labels "lang=python,type=chat"         # Filter by language/type
+```
+
+### **Traditional Memory Management**
+
+```bash
+# Manual memory creation
 echo "Meeting notes..." | cmctl create --name "Sprint Planning" --labels "type=meeting,team=eng"
-cmctl get
-cmctl search --query "authentication" --labels "type=code"
-cmctl get <memory-id>
+cmctl create --name "Code Review" --file "./notes.md" --labels "type=review,lang=go"
+
+# Memory operations
+cmctl get                          # List all memories
+cmctl search --query "auth"       # Search across all memories
+cmctl get <memory-id>             # View specific memory
+cmctl delete <memory-id>          # Delete memory
 
 # Advanced features
 cmctl get --show-id               # Display memory IDs
 cmctl get -o json                 # JSON output for scripting
-cmctl get --labels "type=code"    # Filter memories by criteria
-cmctl delete --labels "type=test" # Delete memories by criteria
 cmctl search -q "auth" -o yaml    # Search with YAML output
-
-# Provider options
-cmctl --provider file health      # Local file storage (default)
-cmctl --provider s3 health        # AWS S3 (coming soon)
-cmctl --provider gcs health       # Google Cloud (coming soon)
 ```
 
 ## Architecture
@@ -84,10 +100,29 @@ contextmemory/
 
 ## CLI Reference
 
-### Core Operations
+### **Chat Capture Commands (Primary Use Case)**
 
 ```bash
-# Create memories
+# Import conversations from Cursor AI pane
+cmctl import-cursor-chat --latest                           # Import most recent chat
+cmctl import-cursor-chat --tab-id abc123def                # Import specific chat
+cmctl import-cursor-chat --preview                         # Preview available chats
+
+# Discover available chats
+cmctl list-cursor-chats                                    # List all chats
+cmctl list-cursor-chats --search "authentication"         # Search chat content
+cmctl list-cursor-chats --limit 5                         # Show first 5 chats
+
+# Search your captured conversations  
+cmctl search --query "React hooks debugging"              # Find specific discussions
+cmctl search --query "error" --labels "type=chat,lang=python"   # Filter by context
+cmctl get --labels "type=chat"                            # Show all captured chats
+```
+
+### **Traditional Memory Operations**
+
+```bash
+# Manual memory creation
 echo "content" | cmctl create --name "Memory Name" --labels "key=value,type=note"
 cmctl create --name "Code Review" --file "./notes.md" --labels "type=review,lang=go"
 
@@ -141,7 +176,7 @@ cmctl --provider remote health    # HTTP API backend
 
 ## VS Code Extension
 
-The extension integrates ContextMemory into your development workflow:
+Perfect integration with Cursor AI pane for seamless chat capture:
 
 ### Installation
 
@@ -149,35 +184,48 @@ The extension integrates ContextMemory into your development workflow:
 # Build and package extension
 make build.ui && make package.ui
 
-# Install in VS Code
-code --install-extension ui/contextmemory-0.6.0.vsix
+# Install in Cursor (Recommended)
+cursor --install-extension ui/contextmemory-0.6.3.vsix
 
-# Or install in Cursor  
-cursor --install-extension ui/contextmemory-0.6.0.vsix
+# Or install in VS Code
+code --install-extension ui/contextmemory-0.6.3.vsix
 ```
 
-### Extension Features
+### **Primary Workflow: Chat Capture**
+
+**One-Click Chat Capture:**
+1. Have a conversation in Cursor's AI pane
+2. Open Command Palette (`Cmd/Ctrl+Shift+P`)
+3. Run `ContextMemory: Capture Current Chat`
+4. **AI automatically names and labels your conversation!**
+
+**What gets captured:**
+- Full conversation history (your questions + AI responses)
+- Intelligent naming: "React State Management Discussion" 
+- Smart labels: `lang=javascript,type=troubleshooting,topic=state`
+- Converted to searchable markdown format
+- Technical concepts extracted automatically
+
+### **All Extension Features**
 
 **Command Palette:**
-- `ContextMemory: Create Memory` - Create new memory
+- `ContextMemory: Capture Current Chat` - **Main feature: Capture AI conversations**
+- `ContextMemory: Search Memories` - Find past conversations instantly
+- `ContextMemory: List All Memories` - Browse all captured chats and notes
+- `ContextMemory: Create Memory` - Manual memory creation
 - `ContextMemory: Create Memory from Selection` - Create from selected code
-- `ContextMemory: Create Memory from Current Chat` - Create from chat/markdown file
-- `ContextMemory: Search Memories` - Search existing memories
-- `ContextMemory: List All Memories` - Browse all memories
 - `ContextMemory: Delete Memory` - Delete specific memory
-- `ContextMemory: Delete Memories by Labels` - Bulk delete by criteria
-- `ContextMemory: Delete All Memories` - Delete all memories (with confirmation)
 - `ContextMemory: Open Configuration` - Manage extension settings
 - `ContextMemory: Check Health` - Verify CLI connectivity
 
 **Tree View:**
-- Browse memories by category (Recent, Type, Language, Project)
-- Click to open memory in editor
-- Automatic categorization based on labels
+- Browse memories by category (Recent, Chat, Code, Language)
+- Click to open conversation in editor
+- Automatic categorization based on AI-generated labels
+- See programming languages, topics, and conversation types
 
 **Context Menus:**
-- Right-click selected code → "Create Memory from Selection"
-- Right-click .md files → "Create Memory from Current Chat"
+- Right-click selected code → "Create Memory from Selection"  
 - Right-click memories in tree view → "Delete Memory"
 
 **Configuration:**
@@ -287,17 +335,18 @@ ContextMemory uses `~/.contextmemory/` for storage and configuration:
 ## Features
 
 **Current (v0.6.3):**
+- **Direct Cursor AI pane integration** - One-click chat capture with intelligent naming
+- **AI-powered conversation analysis** - Automatic language detection, topic extraction, smart labeling  
+- **Full-text search** across captured AI conversations and manual memories
 - File-based storage with full CRUD operations
 - Professional CLI (`cmctl`) with multiple output formats (JSON, YAML, JSONPath, Go templates)
 - Memory deletion with flexible criteria (ID, labels, bulk operations)
-- Optional memory ID display for advanced operations
-- AI-assisted name and label generation
-- Cross-platform Go binary (macOS, Linux, Windows)
-- VS Code extension with comprehensive management capabilities
+- Cross-platform Go binary (macOS, Linux, Windows, ARM64)
+- VS Code/Cursor extension with tree view and command integration
 - Interactive configuration editor for all settings
 - Extensible provider architecture foundation
 
-🚧 **Planned:**
+**Planned:**
 - Cloud storage providers (AWS S3, Google Cloud Storage)
 - Remote HTTP API provider
 - Enhanced VS Code extension features
