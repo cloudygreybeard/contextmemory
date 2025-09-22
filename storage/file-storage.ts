@@ -19,7 +19,7 @@ import {
 } from '../core/memory';
 
 export interface FileStorageConfig {
-    /** Storage directory (default: ~/.contextmemory-v2) */
+    /** Storage directory (default: ~/.contextmemory) */
     storageDir?: string;
     
     /** Enable auto-backup */
@@ -36,7 +36,7 @@ export class FileBasedStorage implements MemoryStorage {
     private configFile: string;
     
     constructor(config: FileStorageConfig = {}) {
-        this.storageDir = config.storageDir || path.join(os.homedir(), '.contextmemory-v2');
+        this.storageDir = config.storageDir || path.join(os.homedir(), '.contextmemory');
         this.memoriesDir = path.join(this.storageDir, 'memories');
         this.indexFile = path.join(this.storageDir, 'index.json');
         this.configFile = path.join(this.storageDir, 'config.json');

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/cloudygreybeard/contextmemory-v2/cmd/cm/internal/storage"
+	"github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/util/jsonpath"
 )

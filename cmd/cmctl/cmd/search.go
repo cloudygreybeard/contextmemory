@@ -2,9 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/cloudygreybeard/contextmemory-v2/cmd/cm/internal/storage"
+	"github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -48,16 +47,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	}
 
 	// Parse label selector
-	labelSelector := make(map[string]string)
-	if searchLabels != "" {
-		pairs := strings.Split(searchLabels, ",")
-		for _, pair := range pairs {
-			parts := strings.SplitN(pair, "=", 2)
-			if len(parts) == 2 {
-				labelSelector[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
-			}
-		}
-	}
+	labelSelector := parseLabels(searchLabels)
 
 	// Create search request
 	req := storage.SearchRequest{

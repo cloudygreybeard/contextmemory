@@ -3,15 +3,18 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/cloudygreybeard/contextmemory-v2/cmd/cm/internal/storage"
+	"github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all memories",
+	Use:        "list",
+	Deprecated: "use 'cmctl get' instead",
+	Short:      "List all memories (deprecated, use 'get')",
 	Long: `List all memories with their basic information.
+
+DEPRECATED: This command is deprecated. Use 'cmctl get' instead.
 
 Examples:
   cmctl list                              # List memories without IDs

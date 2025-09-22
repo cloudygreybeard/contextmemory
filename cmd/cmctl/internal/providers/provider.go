@@ -1,7 +1,7 @@
 package providers
 
 import (
-	"github.com/cloudygreybeard/contextmemory-v2/cmd/cm/internal/storage"
+	"github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
 )
 
 // ProviderType represents different storage backend types
@@ -39,7 +39,13 @@ type ProviderConfig struct {
 
 // StorageProvider interface that all storage backends must implement
 type StorageProvider interface {
-	storage.FileStorage // Embed the existing interface for now
+	// Core storage operations (matches FileStorage methods)
+	Create(req storage.CreateMemoryRequest) (*storage.Memory, error)
+	Get(id string) (*storage.Memory, error)
+	Update(req storage.UpdateMemoryRequest) (*storage.Memory, error)
+	Delete(id string) error
+	List() ([]storage.Memory, error)
+	Search(req storage.SearchRequest) (*storage.SearchResponse, error)
 
 	// Provider-specific methods
 	GetProviderType() ProviderType
@@ -49,32 +55,35 @@ type StorageProvider interface {
 
 // ProviderFactory creates storage providers based on configuration
 type ProviderFactory struct {
-	providers map[ProviderType]func(ProviderConfig) (StorageProvider, error)
+	providers map[ProviderType]func(ProviderConfig) (interface{}, error)
 }
 
 // NewProviderFactory creates a new provider factory
 func NewProviderFactory() *ProviderFactory {
 	factory := &ProviderFactory{
-		providers: make(map[ProviderType]func(ProviderConfig) (StorageProvider, error)),
+		providers: make(map[ProviderType]func(ProviderConfig) (interface{}, error)),
 	}
 
-	// Register built-in providers
-	factory.RegisterProvider(FileProvider, NewFileProvider)
-	// TODO: Register cloud providers when implemented
-	// factory.RegisterProvider(S3Provider, NewS3Provider)
-	// factory.RegisterProvider(GCSProvider, NewGCSProvider)
-	// factory.RegisterProvider(RemoteProvider, NewRemoteProvider)
+	// Register implemented providers
+	factory.RegisterProvider(FileProvider, func(config ProviderConfig) (interface{}, error) {
+		return NewFileProvider(config)
+	})
+	
+	// Register placeholders for future providers (will return "not implemented" errors)
+	factory.RegisterProvider(S3Provider, NewS3Provider)
+	factory.RegisterProvider(GCSProvider, NewGCSProvider)
+	factory.RegisterProvider(RemoteProvider, NewRemoteProvider)
 
 	return factory
 }
 
 // RegisterProvider registers a new storage provider
-func (f *ProviderFactory) RegisterProvider(providerType ProviderType, constructor func(ProviderConfig) (StorageProvider, error)) {
+func (f *ProviderFactory) RegisterProvider(providerType ProviderType, constructor func(ProviderConfig) (interface{}, error)) {
 	f.providers[providerType] = constructor
 }
 
 // CreateProvider creates a storage provider instance
-func (f *ProviderFactory) CreateProvider(config ProviderConfig) (StorageProvider, error) {
+func (f *ProviderFactory) CreateProvider(config ProviderConfig) (interface{}, error) {
 	constructor, exists := f.providers[config.Type]
 	if !exists {
 		return nil, NewUnsupportedProviderError(config.Type)
@@ -85,10 +94,7 @@ func (f *ProviderFactory) CreateProvider(config ProviderConfig) (StorageProvider
 		return nil, err
 	}
 
-	// Validate configuration
-	if err := provider.ValidateConfig(); err != nil {
-		return nil, err
-	}
+	// Note: Validation moved to individual provider implementations
 
 	return provider, nil
 }

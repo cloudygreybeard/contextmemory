@@ -11,6 +11,7 @@ const execAsync = promisify(cp.exec);
 export class CMCtlService implements vscode.Disposable {
     private config: CMCtlConfig;
     private outputChannel: vscode.OutputChannel;
+    private static readonly EXTENSION_VERSION = '0.6.1';
 
     constructor() {
         this.outputChannel = vscode.window.createOutputChannel('ContextMemory');
@@ -89,6 +90,70 @@ export class CMCtlService implements vscode.Disposable {
         const command = `${this.config.cliPath} --version`;
         const output = await this.executeCommand(command);
         return output.replace('cmctl version ', '');
+    }
+
+    /**
+     * Parse semantic version string into components
+     */
+    private parseVersion(version: string): { major: number; minor: number; patch: number } {
+        const cleanVersion = version.replace(/^v/, '').trim();
+        const parts = cleanVersion.split('.');
+        
+        if (parts.length !== 3) {
+            throw new Error(`Invalid version format: ${version}`);
+        }
+
+        return {
+            major: parseInt(parts[0], 10),
+            minor: parseInt(parts[1], 10),
+            patch: parseInt(parts[2], 10)
+        };
+    }
+
+    /**
+     * Check if CLI version is compatible with extension version
+     * Policy: Minor version compatibility (0.6.x extension works with 0.6.y CLI)
+     */
+    async checkVersionCompatibility(): Promise<{ compatible: boolean; reason?: string; cliVersion: string; extensionVersion: string }> {
+        try {
+            const cliVersion = await this.getVersion();
+            const extensionVersion = CMCtlService.EXTENSION_VERSION;
+
+            const cli = this.parseVersion(cliVersion);
+            const ext = this.parseVersion(extensionVersion);
+
+            const compatible = cli.major === ext.major && cli.minor === ext.minor;
+
+            return {
+                compatible,
+                cliVersion,
+                extensionVersion,
+                reason: compatible ? undefined : 
+                    `Extension v${extensionVersion} requires CLI v${ext.major}.${ext.minor}.x, but found v${cliVersion}`
+            };
+        } catch (error: any) {
+            return {
+                compatible: false,
+                cliVersion: 'unknown',
+                extensionVersion: CMCtlService.EXTENSION_VERSION,
+                reason: `Failed to check CLI version: ${error.message}`
+            };
+        }
+    }
+
+    /**
+     * Perform comprehensive health and compatibility check
+     */
+    async checkHealthAndCompatibility(): Promise<void> {
+        // First check basic health
+        await this.checkHealth();
+        
+        // Then check version compatibility
+        const versionCheck = await this.checkVersionCompatibility();
+        
+        if (!versionCheck.compatible) {
+            throw new Error(versionCheck.reason || 'Version compatibility check failed');
+        }
     }
 
     /**
@@ -189,7 +254,7 @@ export class CMCtlService implements vscode.Disposable {
     }
 
     /**
-     * List all memories
+     * List all memories using the unified get command
      */
     async listMemories(): Promise<Memory[]> {
         const args: string[] = [];
@@ -199,7 +264,7 @@ export class CMCtlService implements vscode.Disposable {
             args.push('--show-id');
         }
         
-        const command = this.buildCommand('list', args);
+        const command = this.buildCommand('get', args);
         const output = await this.executeCommand(command);
         
         if (!output || output.includes('No resources found')) {

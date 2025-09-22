@@ -7,27 +7,53 @@ import { registerCommands } from './commands';
  * Extension activation function
  */
 export async function activate(context: vscode.ExtensionContext) {
-    console.log('ContextMemory v0.6.0 extension is now active!');
+    console.log('ContextMemory v0.6.1 extension is now active!');
 
     // Initialize services
     const cmctlService = new CMCtlService();
     
-    // Check CLI availability
+    // Check CLI availability and version compatibility
     try {
-        await cmctlService.checkHealth();
-        console.log('✅ cmctl CLI is available and healthy');
-    } catch (error) {
-        vscode.window.showWarningMessage(
-            'ContextMemory: cmctl CLI not found or unhealthy. Please ensure cmctl is installed and in PATH.',
-            'Install CLI',
-            'Check Docs'
-        ).then(selection => {
-            if (selection === 'Install CLI') {
-                vscode.env.openExternal(vscode.Uri.parse('https://github.com/cloudygreybeard/contextmemory#installation'));
-            } else if (selection === 'Check Docs') {
-                vscode.env.openExternal(vscode.Uri.parse('https://github.com/cloudygreybeard/contextmemory'));
-            }
-        });
+        await cmctlService.checkHealthAndCompatibility();
+        console.log('cmctl CLI is available, healthy, and version-compatible');
+    } catch (error: any) {
+        const errorMessage = error.message || 'Unknown error';
+        
+        // Check if it's a version compatibility issue
+        const versionCheck = await cmctlService.checkVersionCompatibility();
+        
+        if (!versionCheck.compatible && versionCheck.cliVersion !== 'unknown') {
+            // Version mismatch - show specific guidance
+            vscode.window.showWarningMessage(
+                `ContextMemory version mismatch: ${versionCheck.reason}`,
+                'Update CLI',
+                'Check Docs',
+                'Continue Anyway'
+            ).then(selection => {
+                if (selection === 'Update CLI') {
+                    vscode.env.openExternal(vscode.Uri.parse('https://github.com/cloudygreybeard/contextmemory#installation'));
+                } else if (selection === 'Check Docs') {
+                    vscode.env.openExternal(vscode.Uri.parse('https://github.com/cloudygreybeard/contextmemory'));
+                } else if (selection === 'Continue Anyway') {
+                    vscode.window.showInformationMessage(
+                        'ContextMemory will continue, but some features may not work correctly due to version mismatch.'
+                    );
+                }
+            });
+        } else {
+            // CLI not found or other health issue
+            vscode.window.showWarningMessage(
+                'ContextMemory: cmctl CLI not found or unhealthy. Please ensure cmctl is installed and in PATH.',
+                'Install CLI',
+                'Check Docs'
+            ).then(selection => {
+                if (selection === 'Install CLI') {
+                    vscode.env.openExternal(vscode.Uri.parse('https://github.com/cloudygreybeard/contextmemory#installation'));
+                } else if (selection === 'Check Docs') {
+                    vscode.env.openExternal(vscode.Uri.parse('https://github.com/cloudygreybeard/contextmemory'));
+                }
+            });
+        }
     }
 
     // Initialize tree data provider
@@ -53,7 +79,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const hasShownWelcome = context.globalState.get('contextmemory.hasShownWelcome', false);
     if (!hasShownWelcome) {
         vscode.window.showInformationMessage(
-            'Welcome to ContextMemory v0.6.0! Transform your coding conversations into searchable memories.',
+            'Welcome to ContextMemory v0.6.1! Transform your coding conversations into searchable memories.',
             'Get Started',
             'View Documentation'
         ).then(selection => {

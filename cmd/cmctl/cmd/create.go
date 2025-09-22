@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cloudygreybeard/contextmemory-v2/cmd/cm/internal/storage"
+	"github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

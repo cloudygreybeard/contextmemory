@@ -15,7 +15,8 @@ ContextMemory transforms development conversations into a searchable knowledge b
 - **AI-assisted defaults** - Smart name and label generation  
 - **Extensible architecture** - Provider system for different storage backends
 - **Cross-platform** - Single Go binary for CLI operations
-- **IDE integration** - VS Code extension for seamless workflow integration
+- **IDE integration** - VS Code extension with automatic version compatibility checking
+- **Version safety** - Minor version compatibility policy ensures reliable UI-CLI interaction
 
 ## Quick Start
 
@@ -27,13 +28,14 @@ make build && make install.cli
 
 # Basic usage
 echo "Meeting notes..." | cmctl create --name "Sprint Planning" --labels "type=meeting,team=eng"
-cmctl list
+cmctl get
 cmctl search --query "authentication" --labels "type=code"
 cmctl get <memory-id>
 
 # Advanced features
-cmctl list --show-id              # Display memory IDs
-cmctl list -o json                # JSON output for scripting
+cmctl get --show-id               # Display memory IDs
+cmctl get -o json                 # JSON output for scripting
+cmctl get --labels "type=code"    # Filter memories by criteria
 cmctl delete --labels "type=test" # Delete memories by criteria
 cmctl search -q "auth" -o yaml    # Search with YAML output
 
@@ -87,16 +89,16 @@ contextmemory/
 echo "content" | cmctl create --name "Memory Name" --labels "key=value,type=note"
 cmctl create --name "Code Review" --file "./notes.md" --labels "type=review,lang=go"
 
-# List and search
-cmctl list                                    # Show all memories
-cmctl list --show-id                         # Include memory IDs
-cmctl list --labels "type=meeting"           # Filter by labels
+# List and retrieve
+cmctl get                                     # Show all memories
+cmctl get --show-id                          # Include memory IDs
+cmctl get --labels "type=meeting"            # Filter by labels
+cmctl get <memory-id>                        # Get specific memory
+cmctl get <memory-id> -o json                # JSON output
 cmctl search --query "authentication"        # Full-text search
 cmctl search --labels "type=code,lang=go"    # Search with label filters
 
-# Retrieve and manage
-cmctl get <memory-id>                         # Get specific memory
-cmctl get <memory-id> -o json                # JSON output
+# Manage
 cmctl delete <memory-id>                     # Delete specific memory
 cmctl delete --labels "type=test"           # Delete by criteria
 cmctl delete --all                          # Delete all memories
@@ -108,13 +110,13 @@ cmctl info                                   # Show storage info
 
 ```bash
 # Multiple output formats for scripting and data extraction
-cmctl list -o json                          # JSON format
-cmctl list -o yaml                          # YAML format
-cmctl list -o jsonpath='{.items[*].name}'   # Extract specific fields
+cmctl get -o json                           # JSON format
+cmctl get -o yaml                           # YAML format
+cmctl get -o jsonpath='{.items[*].name}'    # Extract specific fields
 cmctl get mem_123 -o go-template='{{.spec.content}}'  # Custom templates
 
 # Advanced JSONPath examples
-cmctl list -o jsonpath='{.items[?(@.labels.type=="test")].name}'  # Filter results
+cmctl get -o jsonpath='{.items[?(@.labels.type=="test")].name}'   # Filter results
 cmctl search -q "auth" -o jsonpath='{.items[*].id}'               # Get matching IDs
 ```
 
@@ -244,7 +246,7 @@ ContextMemory uses `~/.contextmemory/` for storage and configuration:
 
 ## Features
 
-✅ **Current (v0.6.0):**
+**Current (v0.6.0):**
 - File-based storage with full CRUD operations
 - Professional CLI (`cmctl`) with multiple output formats (JSON, YAML, JSONPath, Go templates)
 - Memory deletion with flexible criteria (ID, labels, bulk operations)
@@ -264,4 +266,4 @@ ContextMemory uses `~/.contextmemory/` for storage and configuration:
 
 ---
 
-**Version 0.6.1** - Enhanced with deletion capabilities, output formats, configuration editor, and improved documentation.
+**Version 0.6.1** - Enhanced with deletion capabilities, output formats, configuration editor, version compatibility checking, and improved documentation.

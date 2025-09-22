@@ -11,75 +11,49 @@ export function registerCommands(
     cmctlService: CMCtlService,
     memoryTreeProvider: MemoryTreeDataProvider
 ) {
-    // Create Memory command
-    const createMemory = vscode.commands.registerCommand('contextmemory.createMemory', async () => {
-        try {
-            const memory = await promptForMemoryCreation();
-            if (memory) {
-                const createdMemory = await cmctlService.createMemory(memory);
-                vscode.window.showInformationMessage(`Memory "${createdMemory.name}" created successfully`);
-                memoryTreeProvider.refresh();
-            }
-        } catch (error: any) {
-            vscode.window.showErrorMessage(`Failed to create memory: ${error.message}`);
-        }
-    });
 
-    // Create Memory from Selection command
-    const createMemoryFromSelection = vscode.commands.registerCommand('contextmemory.createMemoryFromSelection', async () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor || !editor.selection || editor.selection.isEmpty) {
-            vscode.window.showWarningMessage('Please select some text first');
-            return;
-        }
 
-        const selectedText = editor.document.getText(editor.selection);
-        const fileName = editor.document.fileName;
-        const language = editor.document.languageId;
-
-        try {
-            const memory = await promptForMemoryCreation(selectedText, {
-                type: 'code',
-                language: language,
-                source: 'selection',
-                file: fileName.split('/').pop() || ''
-            });
-
-            if (memory) {
-                const createdMemory = await cmctlService.createMemory(memory);
-                vscode.window.showInformationMessage(`Code memory "${createdMemory.name}" created successfully`);
-                memoryTreeProvider.refresh();
-            }
-        } catch (error: any) {
-            vscode.window.showErrorMessage(`Failed to create memory from selection: ${error.message}`);
-        }
-    });
-
-    // Create Memory from Chat command
+    // Create Memory from Chat command - Enhanced for Cursor chat detection
     const createMemoryFromChat = vscode.commands.registerCommand('contextmemory.createMemoryFromChat', async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showWarningMessage('Please open a chat file first');
+            vscode.window.showWarningMessage('Please open a markdown file containing chat content first');
             return;
         }
 
         const content = editor.document.getText();
         const fileName = editor.document.fileName;
 
+        // Enhanced chat detection and validation
+        if (!isChatContent(content)) {
+            const proceed = await vscode.window.showWarningMessage(
+                'This doesn\'t appear to be chat content. Continue anyway?',
+                'Yes, Continue',
+                'Cancel'
+            );
+            if (proceed !== 'Yes, Continue') {
+                return;
+            }
+        }
+
         try {
-            const memory = await promptForMemoryCreation(content, {
+            // Extract chat metadata for better labeling
+            const chatMetadata = extractChatMetadata(content);
+            const defaultLabels = {
                 type: 'chat',
-                source: 'chat-export',
-                file: fileName.split('/').pop() || ''
-            });
+                source: 'cursor-export',
+                ...chatMetadata
+            };
+
+            const memory = await promptForChatMemoryCreation(content, defaultLabels);
 
             if (memory) {
                 const createdMemory = await cmctlService.createMemory(memory);
-                vscode.window.showInformationMessage(`Chat memory "${createdMemory.name}" created successfully`);
+                vscode.window.showInformationMessage(`Chat memory "${createdMemory.name}" captured successfully`);
                 memoryTreeProvider.refresh();
             }
         } catch (error: any) {
-            vscode.window.showErrorMessage(`Failed to create memory from chat: ${error.message}`);
+            vscode.window.showErrorMessage(`Failed to capture chat memory: ${error.message}`);
         }
     });
 
@@ -130,15 +104,34 @@ export function registerCommands(
     const health = vscode.commands.registerCommand('contextmemory.health', async () => {
         try {
             await cmctlService.checkHealth();
-            const version = await cmctlService.getVersion();
+            const versionCheck = await cmctlService.checkVersionCompatibility();
             const info = await cmctlService.getStorageInfo();
             
-            vscode.window.showInformationMessage(
-                `ContextMemory v${version} is healthy\n` +
+            const compatibilityStatus = versionCheck.compatible ? 'Compatible' : 'Version Mismatch';
+            const message = 
+                `ContextMemory Health Check\n` +
+                `CLI Version: ${versionCheck.cliVersion}\n` +
+                `Extension Version: ${versionCheck.extensionVersion}\n` +
+                `Compatibility: ${compatibilityStatus}\n` +
                 `Storage: ${info.storageDir}\n` +
                 `Memories: ${info.memoriesCount}\n` +
-                `Size: ${info.totalSize}`
-            );
+                `Size: ${info.totalSize}`;
+                
+            if (versionCheck.compatible) {
+                vscode.window.showInformationMessage(message);
+            } else {
+                vscode.window.showWarningMessage(
+                    `${message}\n\nWarning: ${versionCheck.reason}`,
+                    'Update CLI',
+                    'Check Docs'
+                ).then(selection => {
+                    if (selection === 'Update CLI') {
+                        vscode.env.openExternal(vscode.Uri.parse('https://github.com/cloudygreybeard/contextmemory#installation'));
+                    } else if (selection === 'Check Docs') {
+                        vscode.env.openExternal(vscode.Uri.parse('https://github.com/cloudygreybeard/contextmemory'));
+                    }
+                });
+            }
         } catch (error: any) {
             vscode.window.showErrorMessage(`Health check failed: ${error.message}`);
             cmctlService.showOutputChannel();
@@ -249,7 +242,7 @@ export function registerCommands(
 
             // Confirm deletion with strong warning
             const confirmAction = await vscode.window.showWarningMessage(
-                `⚠️ DANGER: This will delete ALL ${count} memories permanently! This cannot be undone!`,
+                `DANGER: This will delete ALL ${count} memories permanently! This cannot be undone!`,
                 { modal: true },
                 'I understand, delete everything'
             );
@@ -272,7 +265,7 @@ export function registerCommands(
             // Create a configuration editor interface
             const items = [
                 {
-                    label: '🛠️ CLI Path',
+                    label: 'CLI Path',
                     description: config.cliPath || 'cmctl',
                     detail: 'Path to the cmctl CLI binary',
                     configKey: 'cliPath',
@@ -286,7 +279,7 @@ export function registerCommands(
                     type: 'string'
                 },
                 {
-                    label: '🔗 Provider',
+                    label: 'Provider',
                     description: config.provider || 'file',
                     detail: 'Storage provider (file, s3, gcs, remote)',
                     configKey: 'provider',
@@ -310,7 +303,7 @@ export function registerCommands(
                     type: 'boolean'
                 },
                 {
-                    label: '🏷️ Default Labels',
+                    label: 'Default Labels',
                     description: Array.isArray(config.defaultLabels) ? config.defaultLabels.join(', ') : 'None',
                     detail: 'Default labels to apply to new memories',
                     configKey: 'defaultLabels',
@@ -339,21 +332,94 @@ export function registerCommands(
         }
     });
 
-    // Add all commands to subscriptions
+    // Add essential commands to subscriptions - focused on chat capture
     context.subscriptions.push(
-        createMemory,
-        createMemoryFromSelection,
         createMemoryFromChat,
-        searchMemories,
-        listMemories,
         refreshMemories,
         openMemory,
-        health,
-        deleteMemory,
-        deleteMemoriesByLabels,
-        deleteAllMemories,
-        openConfig
+        health
     );
+}
+
+/**
+ * Chat-specific memory creation with enhanced AI naming
+ */
+async function promptForChatMemoryCreation(
+    content: string,
+    defaultLabels: Record<string, string> = {}
+): Promise<CreateMemoryRequest | undefined> {
+    // Use enhanced chat-specific naming
+    const suggestedName = await suggestChatNameFromContent(content);
+    
+    const name = await vscode.window.showInputBox({
+        prompt: 'Chat Memory Name (AI suggested based on conversation)',
+        placeHolder: 'AI analyzed the conversation to suggest this name...',
+        value: suggestedName,
+        validateInput: (value) => {
+            if (!value || value.trim().length === 0) {
+                return 'Memory name is required';
+            }
+            return null;
+        }
+    });
+
+    if (!name) {
+        return undefined;
+    }
+
+    // Get configuration for auto-labeling
+    const config = vscode.workspace.getConfiguration('contextmemory');
+    const defaultLabelsFromConfig = config.get<string[]>('defaultLabels', []);
+    
+    let labels = { ...defaultLabels };
+    
+    // Add default labels from config
+    defaultLabelsFromConfig.forEach(label => {
+        const [key, value] = label.split('=');
+        if (key && value) {
+            labels[key.trim()] = value.trim();
+        }
+    });
+
+    // For chat, we focus on AI-suggested labels rather than user input
+    const labelString = Object.entries(labels)
+        .map(([key, value]) => `${key}=${value}`)
+        .join(',');
+    
+    // Show labels for user review/override
+    const finalLabels = await vscode.window.showInputBox({
+        prompt: 'Labels (AI suggested based on chat analysis)',
+        placeHolder: 'AI detected: programming language, activity, topic...',
+        value: labelString,
+        validateInput: (value) => {
+            if (value && value.includes('=') && !value.match(/^[\w-]+=[\w-]+(,[\w-]+=[\w-]+)*$/)) {
+                return 'Invalid format. Use: key1=value1,key2=value2';
+            }
+            return null;
+        }
+    });
+
+    if (finalLabels === undefined) {
+        return undefined;
+    }
+
+    // Parse final labels
+    const parsedLabels: Record<string, string> = {};
+    if (finalLabels && finalLabels.trim()) {
+        const pairs = finalLabels.split(',');
+        pairs.forEach(pair => {
+            const [key, value] = pair.split('=');
+            if (key && value) {
+                parsedLabels[key.trim()] = value.trim();
+            }
+        });
+    }
+
+    return {
+        name: name.trim(),
+        content: content,
+        labels: parsedLabels
+    };
 }
 
 /**
@@ -483,6 +549,187 @@ async function suggestNameFromContent(content: string): Promise<string> {
     
     // Fallback: Use timestamp
     return `Memory ${new Date().toISOString().split('T')[0]}`;
+}
+
+/**
+ * Enhanced chat-specific naming that understands conversation patterns
+ */
+async function suggestChatNameFromContent(content: string): Promise<string> {
+    // Strategy 1: Look for explicit topics or subjects
+    const topicName = extractChatTopic(content);
+    if (topicName) {
+        return topicName;
+    }
+    
+    // Strategy 2: Extract from main technical concepts discussed
+    const conceptName = extractTechnicalConcepts(content);
+    if (conceptName) {
+        return conceptName;
+    }
+    
+    // Strategy 3: Use chat session pattern
+    const sessionName = generateSessionName(content);
+    return sessionName;
+}
+
+/**
+ * Detect if content appears to be a chat conversation
+ */
+function isChatContent(content: string): boolean {
+    const chatIndicators = [
+        /\*\*User\*\*:/i,
+        /\*\*Assistant\*\*:/i,
+        /^User:/m,
+        /^Assistant:/m,
+        /^Human:/m,
+        /^AI:/m,
+        /^You:/m,
+        /^Me:/m,
+        /@\w+:/, // Mentions
+        />\s*[A-Z]/, // Quote blocks
+        /^[A-Z][a-z]+:\s/m // Name: pattern
+    ];
+    
+    const indicatorCount = chatIndicators.reduce((count, pattern) => {
+        return count + (pattern.test(content) ? 1 : 0);
+    }, 0);
+    
+    // Also check for conversation-like patterns
+    const messageCount = (content.match(/^[A-Za-z]+:\s/gm) || []).length;
+    const hasCodeBlocks = /```/.test(content);
+    const hasQuestions = (content.match(/\?/g) || []).length;
+    
+    return indicatorCount >= 2 || messageCount >= 3 || (hasCodeBlocks && hasQuestions >= 2);
+}
+
+/**
+ * Extract metadata from chat content for better labeling
+ */
+function extractChatMetadata(content: string): Record<string, string> {
+    const metadata: Record<string, string> = {};
+    
+    // Extract date if present
+    const dateMatch = content.match(/\*\*Date\*\*:\s*([^\n]+)/i) || 
+                     content.match(/Date:\s*([^\n]+)/i);
+    if (dateMatch) {
+        metadata.date = dateMatch[1].trim();
+    } else {
+        metadata.date = new Date().toISOString().split('T')[0];
+    }
+    
+    // Extract topic/subject
+    const topicMatch = content.match(/\*\*Topic\*\*:\s*([^\n]+)/i) ||
+                      content.match(/\*\*Subject\*\*:\s*([^\n]+)/i) ||
+                      content.match(/Topic:\s*([^\n]+)/i);
+    if (topicMatch) {
+        metadata.topic = topicMatch[1].trim().toLowerCase().replace(/\s+/g, '-');
+    }
+    
+    // Detect programming languages mentioned
+    const languagePatterns = /\b(javascript|typescript|python|java|go|rust|cpp|c\+\+|html|css|sql|bash|shell)\b/gi;
+    const languages = content.match(languagePatterns);
+    if (languages && languages.length > 0) {
+        const uniqueLanguages = [...new Set(languages.map(l => l.toLowerCase()))];
+        metadata.language = uniqueLanguages[0]; // Primary language
+        if (uniqueLanguages.length > 1) {
+            metadata.languages = uniqueLanguages.join(',');
+        }
+    }
+    
+    // Detect if it's about debugging, implementing, reviewing, etc.
+    const activityPatterns = [
+        { pattern: /\b(debug|debugging|bug|error|issue|problem)\b/gi, label: 'debugging' },
+        { pattern: /\b(implement|implementation|create|build|develop)\b/gi, label: 'implementation' },
+        { pattern: /\b(review|code review|feedback|suggestions)\b/gi, label: 'review' },
+        { pattern: /\b(refactor|refactoring|improve|optimization)\b/gi, label: 'refactoring' },
+        { pattern: /\b(test|testing|unit test|integration)\b/gi, label: 'testing' }
+    ];
+    
+    for (const { pattern, label } of activityPatterns) {
+        if (pattern.test(content)) {
+            metadata.activity = label;
+            break;
+        }
+    }
+    
+    return metadata;
+}
+
+/**
+ * Extract chat topic from content
+ */
+function extractChatTopic(content: string): string | null {
+    // Look for explicit topic declarations
+    const topicPatterns = [
+        /\*\*Topic\*\*:\s*([^\n]+)/i,
+        /\*\*Subject\*\*:\s*([^\n]+)/i,
+        /^#\s*(.+)$/m, // First markdown header
+        /Topic:\s*([^\n]+)/i,
+        /Subject:\s*([^\n]+)/i
+    ];
+    
+    for (const pattern of topicPatterns) {
+        const match = content.match(pattern);
+        if (match && match[1]) {
+            return cleanTitle(match[1]);
+        }
+    }
+    
+    return null;
+}
+
+/**
+ * Extract technical concepts discussed in chat
+ */
+function extractTechnicalConcepts(content: string): string | null {
+    const technicalTerms = [
+        // Programming concepts
+        'authentication', 'authorization', 'api', 'database', 'frontend', 'backend',
+        'microservices', 'docker', 'kubernetes', 'deployment', 'testing', 'debugging',
+        'performance', 'optimization', 'security', 'encryption', 'validation',
+        'refactoring', 'architecture', 'design pattern', 'algorithm', 'data structure',
+        
+        // Frameworks and tools
+        'react', 'vue', 'angular', 'nodejs', 'express', 'fastapi', 'django', 'flask',
+        'spring', 'laravel', 'rails', 'nextjs', 'nuxt', 'gatsby', 'svelte',
+        
+        // Technologies
+        'graphql', 'rest', 'websocket', 'redis', 'mongodb', 'postgresql', 'mysql',
+        'elasticsearch', 'kafka', 'rabbitmq', 'aws', 'azure', 'gcp', 'firebase'
+    ];
+    
+    const foundTerms = technicalTerms.filter(term => 
+        new RegExp(`\\b${term}\\b`, 'gi').test(content)
+    );
+    
+    if (foundTerms.length > 0) {
+        // Use the most mentioned term
+        const termCounts = foundTerms.map(term => ({
+            term,
+            count: (content.match(new RegExp(`\\b${term}\\b`, 'gi')) || []).length
+        }));
+        
+        const topTerm = termCounts.sort((a, b) => b.count - a.count)[0];
+        return titleCase(`${topTerm.term} discussion`);
+    }
+    
+    return null;
+}
+
+/**
+ * Generate session-based name for chat
+ */
+function generateSessionName(content: string): string {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Try to extract key action words
+    const actionWords = content.match(/\b(help|implement|fix|debug|create|build|review|explain|understand)\b/gi);
+    if (actionWords && actionWords.length > 0) {
+        const primaryAction = actionWords[0].toLowerCase();
+        return titleCase(`${primaryAction} session ${today}`);
+    }
+    
+    return `Development Session ${today}`;
 }
 
 /**

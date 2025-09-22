@@ -1,7 +1,7 @@
 package providers
 
 import (
-	"github.com/cloudygreybeard/contextmemory-v2/cmd/cm/internal/storage"
+	"github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
 )
 
 // FileStorageProvider implements file-based storage

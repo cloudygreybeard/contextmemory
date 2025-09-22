@@ -1,0 +1,2025 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>cmd: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/create.go (0.0%)</option>
+				
+				<option value="file1">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/delete.go (0.0%)</option>
+				
+				<option value="file2">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/get.go (0.0%)</option>
+				
+				<option value="file3">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/health.go (0.0%)</option>
+				
+				<option value="file4">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/import_cursor_chat.go (0.0%)</option>
+				
+				<option value="file5">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/info.go (0.0%)</option>
+				
+				<option value="file6">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/list.go (0.0%)</option>
+				
+				<option value="file7">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/list_cursor_chats.go (0.0%)</option>
+				
+				<option value="file8">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/output.go (0.0%)</option>
+				
+				<option value="file9">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/root.go (0.0%)</option>
+				
+				<option value="file10">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/search.go (0.0%)</option>
+				
+				<option value="file11">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/utils.go (0.0%)</option>
+				
+				<option value="file12">github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd/verbose.go (0.0%)</option>
+				
+				<option value="file13">github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/providers/cloud_skeleton.go (0.0%)</option>
+				
+				<option value="file14">github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/providers/errors.go (0.0%)</option>
+				
+				<option value="file15">github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/providers/file.go (0.0%)</option>
+				
+				<option value="file16">github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/providers/provider.go (0.0%)</option>
+				
+				<option value="file17">github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/utils/id.go (100.0%)</option>
+				
+				<option value="file18">github.com/cloudygreybeard/contextmemory/cmd/cmctl/main.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package cmd
+
+import (
+        "bufio"
+        "fmt"
+        "io"
+        "os"
+        "strings"
+
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var createCmd = &amp;cobra.Command{
+        Use:   "create",
+        Short: "Create a new memory",
+        Long: `Create a new memory with optional name, labels, and content.
+Content can be provided via --content flag or piped from stdin.
+
+Examples:
+  cmctl create --name "API Notes" --content "REST endpoints..." --labels "type=notes,project=api"
+  echo "Session context..." | cmctl create --name "Debug Session"
+  cmctl create --content "$(cat notes.txt)" --labels "type=docs"`,
+        RunE: runCreate,
+}
+
+var (
+        createName    string
+        createContent string
+        createLabels  string
+)
+
+func init() <span class="cov0" title="0">{
+        rootCmd.AddCommand(createCmd)
+
+        createCmd.Flags().StringVarP(&amp;createName, "name", "n", "", "Memory name")
+        createCmd.Flags().StringVarP(&amp;createContent, "content", "c", "", "Memory content (or pipe from stdin)")
+        createCmd.Flags().StringVarP(&amp;createLabels, "labels", "l", "", "Labels (format: key1=value1,key2=value2)")
+}</span>
+
+func runCreate(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+        // Initialize storage
+        storageDir := viper.GetString("storage-dir")
+        fs, err := storage.NewFileStorage(storageDir)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to initialize storage: %w", err)
+        }</span>
+
+        // Get content from stdin if not provided via flag
+        <span class="cov0" title="0">content := createContent
+        if content == "" </span><span class="cov0" title="0">{
+                stdinContent, err := readStdin()
+                if err == nil &amp;&amp; stdinContent != "" </span><span class="cov0" title="0">{
+                        content = stdinContent
+                }</span>
+        }
+
+        <span class="cov0" title="0">if content == "" </span><span class="cov0" title="0">{
+                return fmt.Errorf("content is required (use --content or pipe from stdin)")
+        }</span>
+
+        // Parse labels
+        <span class="cov0" title="0">labels := make(map[string]string)
+        if createLabels != "" </span><span class="cov0" title="0">{
+                pairs := strings.Split(createLabels, ",")
+                for _, pair := range pairs </span><span class="cov0" title="0">{
+                        parts := strings.SplitN(pair, "=", 2)
+                        if len(parts) == 2 </span><span class="cov0" title="0">{
+                                labels[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+                        }</span>
+                }
+        }
+
+        // Create memory
+        <span class="cov0" title="0">req := storage.CreateMemoryRequest{
+                Name:    createName,
+                Content: content,
+                Labels:  labels,
+        }
+
+        memory, err := fs.Create(req)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create memory: %w", err)
+        }</span>
+
+        // Output success message
+        <span class="cov0" title="0">fmt.Printf("memory/%s created\n", memory.ID)
+        if GetVerbosity() &gt;= Normal </span><span class="cov0" title="0">{
+                fmt.Printf("NAME\t%s\n", memory.Name)
+                fmt.Printf("LABELS\t%s\n", formatLabels(memory.Labels))
+                fmt.Printf("CREATED\t%s\n", memory.CreatedAt.Format("2006-01-02T15:04:05Z"))
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+func readStdin() (string, error) <span class="cov0" title="0">{
+        stat, err := os.Stdin.Stat()
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov0" title="0">if (stat.Mode() &amp; os.ModeCharDevice) != 0 </span><span class="cov0" title="0">{
+                // No piped input
+                return "", nil
+        }</span>
+
+        <span class="cov0" title="0">var content strings.Builder
+        scanner := bufio.NewScanner(os.Stdin)
+        for scanner.Scan() </span><span class="cov0" title="0">{
+                content.WriteString(scanner.Text())
+                content.WriteString("\n")
+        }</span>
+
+        <span class="cov0" title="0">if err := scanner.Err(); err != nil &amp;&amp; err != io.EOF </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov0" title="0">return strings.TrimSpace(content.String()), nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package cmd
+
+import (
+        "fmt"
+        "strings"
+
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var deleteCmd = &amp;cobra.Command{
+        Use:   "delete [memory-id]",
+        Short: "Delete memories by ID or criteria",
+        Long: `Delete one or more memories by ID or using label selectors.
+
+Examples:
+  cmctl delete memory/mem_12345678_90abcd    # Delete specific memory
+  cmctl delete --labels "type=test"         # Delete all memories with type=test
+  cmctl delete --all                        # Delete all memories (use with caution)`,
+        RunE: runDelete,
+}
+
+var (
+        deleteLabels string
+        deleteAll    bool
+        deleteForce  bool
+)
+
+func init() <span class="cov0" title="0">{
+        rootCmd.AddCommand(deleteCmd)
+
+        deleteCmd.Flags().StringVarP(&amp;deleteLabels, "labels", "l", "", "Delete memories matching label selector (format: key1=value1,key2=value2)")
+        deleteCmd.Flags().BoolVar(&amp;deleteAll, "all", false, "Delete all memories (dangerous)")
+        deleteCmd.Flags().BoolVar(&amp;deleteForce, "force", false, "Skip confirmation prompts")
+}</span>
+
+func runDelete(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+        // Initialize storage
+        storageDir := viper.GetString("storage-dir")
+        fs, err := storage.NewFileStorage(storageDir)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to initialize storage: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">verbosity := viper.GetInt("verbosity")
+
+        // Handle different delete modes
+        if len(args) == 1 </span><span class="cov0" title="0">{
+                // Delete specific memory by ID
+                memoryID := args[0]
+                return deleteMemoryByID(fs, memoryID, verbosity)
+        }</span> else<span class="cov0" title="0"> if deleteAll </span><span class="cov0" title="0">{
+                // Delete all memories
+                return deleteAllMemories(fs, verbosity)
+        }</span> else<span class="cov0" title="0"> if deleteLabels != "" </span><span class="cov0" title="0">{
+                // Delete by label selector
+                return deleteMemoriesByLabels(fs, deleteLabels, verbosity)
+        }</span> else<span class="cov0" title="0"> {
+                return fmt.Errorf("must specify memory ID, --labels, or --all")
+        }</span>
+}
+
+func deleteMemoryByID(fs *storage.FileStorage, memoryID string, verbosity int) error <span class="cov0" title="0">{
+        // Check if memory exists
+        memory, err := fs.Get(memoryID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to get memory: %w", err)
+        }</span>
+        <span class="cov0" title="0">if memory == nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("memory not found: %s", memoryID)
+        }</span>
+
+        // Confirmation prompt (unless forced)
+        <span class="cov0" title="0">if !deleteForce </span><span class="cov0" title="0">{
+                if verbosity &gt;= 1 </span><span class="cov0" title="0">{
+                        fmt.Printf("Are you sure you want to delete memory '%s'? (y/N): ", memory.Name)
+                        var response string
+                        fmt.Scanln(&amp;response)
+                        if strings.ToLower(response) != "y" &amp;&amp; strings.ToLower(response) != "yes" </span><span class="cov0" title="0">{
+                                fmt.Println("Delete cancelled")
+                                return nil
+                        }</span>
+                }
+        }
+
+        // Delete the memory
+        <span class="cov0" title="0">if err := fs.Delete(memoryID); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to delete memory: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if verbosity &gt;= 1 </span><span class="cov0" title="0">{
+                fmt.Printf("Memory '%s' deleted successfully\n", memory.Name)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+func deleteAllMemories(fs *storage.FileStorage, verbosity int) error <span class="cov0" title="0">{
+        // Get all memories
+        memories, err := fs.List()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to list memories: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if len(memories) == 0 </span><span class="cov0" title="0">{
+                if verbosity &gt;= 1 </span><span class="cov0" title="0">{
+                        fmt.Println("No memories to delete")
+                }</span>
+                <span class="cov0" title="0">return nil</span>
+        }
+
+        // Confirmation prompt (unless forced)
+        <span class="cov0" title="0">if !deleteForce </span><span class="cov0" title="0">{
+                if verbosity &gt;= 1 </span><span class="cov0" title="0">{
+                        fmt.Printf("Are you sure you want to delete ALL %d memories? This cannot be undone! (y/N): ", len(memories))
+                        var response string
+                        fmt.Scanln(&amp;response)
+                        if strings.ToLower(response) != "y" &amp;&amp; strings.ToLower(response) != "yes" </span><span class="cov0" title="0">{
+                                fmt.Println("Delete cancelled")
+                                return nil
+                        }</span>
+                }
+        }
+
+        // Delete all memories
+        <span class="cov0" title="0">deletedCount := 0
+        for _, memory := range memories </span><span class="cov0" title="0">{
+                if err := fs.Delete(memory.ID); err != nil </span><span class="cov0" title="0">{
+                        if verbosity &gt;= 1 </span><span class="cov0" title="0">{
+                                fmt.Printf("Failed to delete memory '%s': %v\n", memory.Name, err)
+                        }</span>
+                } else<span class="cov0" title="0"> {
+                        deletedCount++
+                        if verbosity &gt;= 2 </span><span class="cov0" title="0">{
+                                fmt.Printf("Deleted: %s\n", memory.Name)
+                        }</span>
+                }
+        }
+
+        <span class="cov0" title="0">if verbosity &gt;= 1 </span><span class="cov0" title="0">{
+                fmt.Printf("Successfully deleted %d/%d memories\n", deletedCount, len(memories))
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+func deleteMemoriesByLabels(fs *storage.FileStorage, labelSelector string, verbosity int) error <span class="cov0" title="0">{
+        // Parse label selector
+        labels := parseLabels(labelSelector)
+        if len(labels) == 0 </span><span class="cov0" title="0">{
+                return fmt.Errorf("invalid label selector format: %s", labelSelector)
+        }</span>
+
+        // Search for matching memories
+        <span class="cov0" title="0">searchReq := storage.SearchRequest{
+                LabelSelector: labels,
+                Limit:         1000, // Large limit to get all matches
+        }
+
+        searchResp, err := fs.Search(searchReq)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to search memories: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if len(searchResp.Memories) == 0 </span><span class="cov0" title="0">{
+                if verbosity &gt;= 1 </span><span class="cov0" title="0">{
+                        fmt.Println("No memories found matching the label selector")
+                }</span>
+                <span class="cov0" title="0">return nil</span>
+        }
+
+        // Confirmation prompt (unless forced)
+        <span class="cov0" title="0">if !deleteForce </span><span class="cov0" title="0">{
+                if verbosity &gt;= 1 </span><span class="cov0" title="0">{
+                        fmt.Printf("Found %d memories matching labels '%s'\n", len(searchResp.Memories), labelSelector)
+                        for _, memory := range searchResp.Memories </span><span class="cov0" title="0">{
+                                fmt.Printf("  - %s\n", memory.Name)
+                        }</span>
+                        <span class="cov0" title="0">fmt.Print("Are you sure you want to delete these memories? (y/N): ")
+                        var response string
+                        fmt.Scanln(&amp;response)
+                        if strings.ToLower(response) != "y" &amp;&amp; strings.ToLower(response) != "yes" </span><span class="cov0" title="0">{
+                                fmt.Println("Delete cancelled")
+                                return nil
+                        }</span>
+                }
+        }
+
+        // Delete matching memories
+        <span class="cov0" title="0">deletedCount := 0
+        for _, memory := range searchResp.Memories </span><span class="cov0" title="0">{
+                if err := fs.Delete(memory.ID); err != nil </span><span class="cov0" title="0">{
+                        if verbosity &gt;= 1 </span><span class="cov0" title="0">{
+                                fmt.Printf("Failed to delete memory '%s': %v\n", memory.Name, err)
+                        }</span>
+                } else<span class="cov0" title="0"> {
+                        deletedCount++
+                        if verbosity &gt;= 2 </span><span class="cov0" title="0">{
+                                fmt.Printf("Deleted: %s\n", memory.Name)
+                        }</span>
+                }
+        }
+
+        <span class="cov0" title="0">if verbosity &gt;= 1 </span><span class="cov0" title="0">{
+                fmt.Printf("Successfully deleted %d/%d memories\n", deletedCount, len(searchResp.Memories))
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package cmd
+
+import (
+        "fmt"
+
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var getCmd = &amp;cobra.Command{
+        Use:   "get [memory-id]",
+        Short: "Get memories or specific memory by ID",
+        Long: `Retrieve and display memories. Without arguments, lists all memories.
+With a memory ID, retrieves a specific memory.
+
+Examples:
+  cmctl get                                     # List all memories
+  cmctl get --show-id                           # List all memories with IDs
+  cmctl get --labels "type=test"                # List memories with specific labels
+  cmctl get -o json                             # List all memories as JSON
+  cmctl get mem_abc123_def456                   # Get specific memory
+  cmctl get mem_abc123_def456 -o yaml          # Get specific memory as YAML
+  cmctl get mem_abc123_def456 -o jsonpath='{.spec.content}'  # Extract content using JSONPath`,
+        Args: cobra.MaximumNArgs(1),
+        RunE: runGet,
+}
+
+var (
+        getOutputFlag string
+        getShowID     bool
+        getLabels     string
+)
+
+func init() <span class="cov0" title="0">{
+        rootCmd.AddCommand(getCmd)
+
+        getCmd.Flags().StringVarP(&amp;getOutputFlag, "output", "o", "", "Output format: table|json|yaml|jsonpath=&lt;template&gt;|go-template=&lt;template&gt;")
+        getCmd.Flags().BoolVar(&amp;getShowID, "show-id", false, "Show memory IDs when listing memories")
+        getCmd.Flags().StringVarP(&amp;getLabels, "labels", "l", "", "Label selector for filtering (format: key1=value1,key2=value2)")
+}</span>
+
+func runGet(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+        // Initialize storage
+        storageDir := viper.GetString("storage-dir")
+        fs, err := storage.NewFileStorage(storageDir)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to initialize storage: %w", err)
+        }</span>
+
+        // Parse output format
+        <span class="cov0" title="0">outputOpts, err := ParseOutputFormat(getOutputFlag)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("invalid output format: %w", err)
+        }</span>
+
+        // If no memory ID provided, or filtering flags are used, list memories
+        <span class="cov0" title="0">if len(args) == 0 || getLabels != "" </span><span class="cov0" title="0">{
+                return runGetList(fs, outputOpts)
+        }</span>
+
+        // Otherwise, get specific memory
+        <span class="cov0" title="0">memoryID := args[0]
+        return runGetSingle(fs, memoryID, outputOpts)</span>
+}
+
+func runGetList(fs *storage.FileStorage, outputOpts OutputOptions) error <span class="cov0" title="0">{
+        var memories []storage.Memory
+        var err error
+
+        if getLabels != "" </span><span class="cov0" title="0">{
+                // Use search with label filtering
+                labelSelector := parseLabels(getLabels)
+                if len(labelSelector) == 0 </span><span class="cov0" title="0">{
+                        return fmt.Errorf("invalid label selector format: %s", getLabels)
+                }</span>
+
+                <span class="cov0" title="0">searchReq := storage.SearchRequest{
+                        LabelSelector: labelSelector,
+                        Limit:         -1, // No limit for get command
+                }
+                searchRes, err := fs.Search(searchReq)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to search memories: %w", err)
+                }</span>
+                <span class="cov0" title="0">memories = searchRes.Memories</span>
+        } else<span class="cov0" title="0"> {
+                // List all memories
+                memories, err = fs.List()
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to list memories: %w", err)
+                }</span>
+        }
+
+        // Format and print output using the list document format
+        <span class="cov0" title="0">output, err := FormatMemoryList(memories, outputOpts, getShowID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to format output: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">fmt.Print(output)
+        return nil</span>
+}
+
+func runGetSingle(fs *storage.FileStorage, memoryID string, outputOpts OutputOptions) error <span class="cov0" title="0">{
+        // Get memory
+        memory, err := fs.Get(memoryID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to get memory: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if memory == nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("memory not found: %s", memoryID)
+        }</span>
+
+        // Format and print output
+        <span class="cov0" title="0">output, err := FormatSingleMemory(memory, outputOpts)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to format output: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">fmt.Print(output)
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package cmd
+
+import (
+        "fmt"
+
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var healthCmd = &amp;cobra.Command{
+        Use:   "health",
+        Short: "Check storage health",
+        Long: `Check if the storage system is accessible and healthy.
+
+Example:
+  cmctl health`,
+        RunE: runHealth,
+}
+
+func init() <span class="cov0" title="0">{
+        rootCmd.AddCommand(healthCmd)
+}</span>
+
+func runHealth(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+        // Initialize storage
+        storageDir := viper.GetString("storage-dir")
+        fs, err := storage.NewFileStorage(storageDir)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to initialize storage: %w", err)
+        }</span>
+
+        // Check health
+        <span class="cov0" title="0">if err := fs.Health(); err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("Storage health: Unhealthy\n")
+                if !IsQuiet() </span><span class="cov0" title="0">{
+                        fmt.Printf("Error: %v\n", err)
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov0" title="0">fmt.Printf("Storage health: OK\n")
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package cmd
+
+import (
+        "fmt"
+        "strings"
+        "time"
+
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/cursor"
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var (
+        importLatest    bool
+        importTabID     string
+        importWorkspace string
+        importPreview   bool
+)
+
+// importCursorChatCmd represents the import-cursor-chat command
+var importCursorChatCmd = &amp;cobra.Command{
+        Use:   "import-cursor-chat",
+        Short: "Import chat from Cursor's AI pane",
+        Long: `Import chat conversations from Cursor's AI pane into ContextMemory.
+
+This command accesses Cursor's local database to extract chat conversations
+and create memory entries with intelligent naming and labeling.
+
+Examples:
+  # Import the most recent chat
+  cmctl import-cursor-chat --latest
+
+  # Import a specific chat by ID
+  cmctl import-cursor-chat --tab-id abc123
+
+  # Preview available chats before importing
+  cmctl import-cursor-chat --preview
+
+  # Import from specific workspace
+  cmctl import-cursor-chat --latest --workspace /path/to/state.vscdb`,
+        RunE: runImportCursorChat,
+}
+
+func init() <span class="cov0" title="0">{
+        rootCmd.AddCommand(importCursorChatCmd)
+
+        importCursorChatCmd.Flags().BoolVar(&amp;importLatest, "latest", false, "Import the most recent chat")
+        importCursorChatCmd.Flags().StringVar(&amp;importTabID, "tab-id", "", "Import specific chat by tab ID")
+        importCursorChatCmd.Flags().StringVar(&amp;importWorkspace, "workspace", "", "Path to specific workspace database")
+        importCursorChatCmd.Flags().BoolVar(&amp;importPreview, "preview", false, "Preview available chats without importing")
+}</span>
+
+func runImportCursorChat(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+        // Initialize workspace reader
+        var reader *cursor.WorkspaceReader
+        if importWorkspace != "" </span><span class="cov0" title="0">{
+                reader = cursor.NewWorkspaceReaderWithPath(importWorkspace)
+        }</span> else<span class="cov0" title="0"> {
+                reader = cursor.NewWorkspaceReader()
+        }</span>
+
+        <span class="cov0" title="0">if importPreview </span><span class="cov0" title="0">{
+                return previewCursorChats(reader)
+        }</span>
+
+        <span class="cov0" title="0">if !importLatest &amp;&amp; importTabID == "" </span><span class="cov0" title="0">{
+                return fmt.Errorf("must specify either --latest or --tab-id")
+        }</span>
+
+        <span class="cov0" title="0">var chatTab *cursor.ChatTab
+        var err error
+
+        if importLatest </span><span class="cov0" title="0">{
+                chatTab, err = reader.GetLatestChat()
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to get latest chat: %w", err)
+                }</span>
+        } else<span class="cov0" title="0"> {
+                chatTab, _, err = reader.GetChatByID(importTabID)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to get chat by ID: %w", err)
+                }</span>
+        }
+
+        // Convert chat to memory format
+        <span class="cov0" title="0">memory := convertChatToMemory(chatTab)
+
+        // Initialize storage
+        storageDir := viper.GetString("storage-dir")
+        provider, err := storage.NewFileStorage(storageDir)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to initialize storage: %w", err)
+        }</span>
+
+        // Create the memory
+        <span class="cov0" title="0">createdMemory, err := provider.Create(memory)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create memory: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">fmt.Printf("Successfully imported chat as memory:\n")
+        fmt.Printf("ID: %s\n", createdMemory.ID)
+        fmt.Printf("Name: %s\n", createdMemory.Name)
+        fmt.Printf("Labels: %v\n", createdMemory.Labels)
+        fmt.Printf("Content: %d characters\n", len(createdMemory.Content))
+
+        return nil</span>
+}
+
+func previewCursorChats(reader *cursor.WorkspaceReader) error <span class="cov0" title="0">{
+        chats, err := reader.ListAllChats()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to list chats: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if len(chats) == 0 </span><span class="cov0" title="0">{
+                fmt.Println("No chats found in Cursor workspaces")
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">fmt.Printf("Found %d chat(s) across workspaces:\n\n", len(chats))
+
+        for i, chat := range chats </span><span class="cov0" title="0">{
+                if i &gt;= 10 </span><span class="cov0" title="0">{ // Limit preview to 10 chats
+                        fmt.Printf("... and %d more\n", len(chats)-10)
+                        break</span>
+                }
+
+                <span class="cov0" title="0">fmt.Printf("Chat %d:\n", i+1)
+                fmt.Printf("  ID: %s\n", chat.ID)
+                fmt.Printf("  Title: %s\n", chat.GetDisplayTitle())
+                fmt.Printf("  Workspace: %s\n", chat.WorkspaceName)
+                fmt.Printf("  Messages: %d\n", len(chat.Messages))
+                if chat.Timestamp &gt; 0 </span><span class="cov0" title="0">{
+                        timestamp := time.Unix(chat.Timestamp/1000, 0)
+                        fmt.Printf("  Date: %s\n", timestamp.Format("2006-01-02 15:04:05"))
+                }</span>
+                <span class="cov0" title="0">fmt.Printf("  Preview: %s\n", truncateString(chat.GetContentPreview(100), 100))
+                fmt.Println()</span>
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+func convertChatToMemory(chatTab *cursor.ChatTab) storage.CreateMemoryRequest <span class="cov0" title="0">{
+        // Generate intelligent name
+        name := generateChatMemoryName(chatTab)
+
+        // Generate labels based on chat analysis
+        labels := generateChatLabels(chatTab)
+
+        // Convert to markdown content
+        content := chatTab.ToMarkdown()
+
+        return storage.CreateMemoryRequest{
+                Name:    name,
+                Content: content,
+                Labels:  labels,
+        }
+}</span>
+
+func generateChatMemoryName(chatTab *cursor.ChatTab) string <span class="cov0" title="0">{
+        // Try to extract topic from title or first message
+        title := chatTab.GetDisplayTitle()
+        if title != "Untitled Chat" &amp;&amp; len(title) &gt; 0 </span><span class="cov0" title="0">{
+                return cleanChatTitle(title)
+        }</span>
+
+        // Analyze technical concepts
+        <span class="cov0" title="0">concepts := chatTab.ExtractTechnicalConcepts()
+        if len(concepts) &gt; 0 </span><span class="cov0" title="0">{
+                primaryConcept := concepts[0]
+                if len(concepts) &gt; 1 </span><span class="cov0" title="0">{
+                        return fmt.Sprintf("%s Development Discussion", strings.Title(primaryConcept))
+                }</span>
+                <span class="cov0" title="0">return fmt.Sprintf("%s Chat", strings.Title(primaryConcept))</span>
+        }
+
+        // Fallback to date-based naming
+        <span class="cov0" title="0">if chatTab.Timestamp &gt; 0 </span><span class="cov0" title="0">{
+                timestamp := time.Unix(chatTab.Timestamp/1000, 0)
+                return fmt.Sprintf("Development Session %s", timestamp.Format("2006-01-02"))
+        }</span>
+
+        <span class="cov0" title="0">return "Cursor Chat Session"</span>
+}
+
+func generateChatLabels(chatTab *cursor.ChatTab) map[string]string <span class="cov0" title="0">{
+        labels := map[string]string{
+                "type":   "chat",
+                "source": "cursor-ai-pane",
+        }
+
+        // Add date
+        if chatTab.Timestamp &gt; 0 </span><span class="cov0" title="0">{
+                timestamp := time.Unix(chatTab.Timestamp/1000, 0)
+                labels["date"] = timestamp.Format("2006-01-02")
+        }</span>
+
+        // Add technical concepts as labels
+        <span class="cov0" title="0">concepts := chatTab.ExtractTechnicalConcepts()
+        if len(concepts) &gt; 0 </span><span class="cov0" title="0">{
+                labels["language"] = concepts[0] // Primary language/concept
+                if len(concepts) &gt; 1 </span><span class="cov0" title="0">{
+                        labels["technologies"] = strings.Join(concepts[:3], ",") // Up to 3 technologies
+                }</span>
+        }
+
+        // Analyze activity type
+        <span class="cov0" title="0">content := strings.ToLower(chatTab.ToMarkdown())
+        activityPatterns := map[string]string{
+                "debug":     "debugging",
+                "error":     "debugging",
+                "implement": "implementation",
+                "create":    "implementation",
+                "build":     "implementation",
+                "review":    "code-review",
+                "refactor":  "refactoring",
+                "optimize":  "optimization",
+                "test":      "testing",
+                "explain":   "learning",
+                "how":       "learning",
+                "what":      "learning",
+        }
+
+        for pattern, activity := range activityPatterns </span><span class="cov0" title="0">{
+                if strings.Contains(content, pattern) </span><span class="cov0" title="0">{
+                        labels["activity"] = activity
+                        break</span>
+                }
+        }
+
+        <span class="cov0" title="0">return labels</span>
+}
+
+func cleanChatTitle(title string) string <span class="cov0" title="0">{
+        // Remove common prefixes and clean up
+        title = strings.TrimSpace(title)
+        title = strings.TrimPrefix(title, "Chat: ")
+        title = strings.TrimPrefix(title, "Discussion: ")
+
+        // Capitalize first letter
+        if len(title) &gt; 0 </span><span class="cov0" title="0">{
+                title = strings.ToUpper(string(title[0])) + title[1:]
+        }</span>
+
+        <span class="cov0" title="0">return title</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package cmd
+
+import (
+        "fmt"
+
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var infoCmd = &amp;cobra.Command{
+        Use:   "info",
+        Short: "Show storage information",
+        Long: `Display information about the storage system including location, 
+memory count, and total storage size.
+
+Example:
+  cmctl info`,
+        RunE: runInfo,
+}
+
+func init() <span class="cov0" title="0">{
+        rootCmd.AddCommand(infoCmd)
+}</span>
+
+func runInfo(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+        // Initialize storage
+        storageDir := viper.GetString("storage-dir")
+        fs, err := storage.NewFileStorage(storageDir)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to initialize storage: %w", err)
+        }</span>
+
+        // Get storage info
+        <span class="cov0" title="0">info, err := fs.GetStorageInfo()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to get storage info: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">fmt.Printf("Storage Directory:\t%s\n", info.StorageDir)
+        fmt.Printf("Total Memories:\t\t%d\n", info.MemoriesCount)
+        fmt.Printf("Storage Size:\t\t%.1f KB\n", float64(info.TotalSize)/1024)
+
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package cmd
+
+import (
+        "fmt"
+
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var listCmd = &amp;cobra.Command{
+        Use:        "list",
+        Deprecated: "use 'cmctl get' instead",
+        Short:      "List all memories (deprecated, use 'get')",
+        Long: `List all memories with their basic information.
+
+DEPRECATED: This command is deprecated. Use 'cmctl get' instead.
+
+Examples:
+  cmctl list                              # List memories without IDs
+  cmctl list --show-id                    # List memories with IDs
+  cmctl list -o json                      # Output as JSON
+  cmctl list -o yaml                      # Output as YAML
+  cmctl list -o jsonpath='{.items[*].metadata.name}'     # JSONPath output
+  cmctl list -o go-template='{{range .items}}{{.spec.name}}{{"\n"}}{{end}}'  # Go template`,
+        RunE: runList,
+}
+
+var (
+        showID     bool
+        outputFlag string
+)
+
+func init() <span class="cov0" title="0">{
+        rootCmd.AddCommand(listCmd)
+
+        listCmd.Flags().BoolVar(&amp;showID, "show-id", false, "Show memory IDs in the output")
+        listCmd.Flags().StringVarP(&amp;outputFlag, "output", "o", "", "Output format: table|json|yaml|jsonpath=&lt;template&gt;|go-template=&lt;template&gt;")
+}</span>
+
+func runList(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+        // Initialize storage
+        storageDir := viper.GetString("storage-dir")
+        fs, err := storage.NewFileStorage(storageDir)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to initialize storage: %w", err)
+        }</span>
+
+        // List memories
+        <span class="cov0" title="0">memories, err := fs.List()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to list memories: %w", err)
+        }</span>
+
+        // Parse output format
+        <span class="cov0" title="0">outputOpts, err := ParseOutputFormat(outputFlag)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("invalid output format: %w", err)
+        }</span>
+
+        // Format and print output
+        <span class="cov0" title="0">output, err := FormatMemoryList(memories, outputOpts, showID)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to format output: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">fmt.Print(output)
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package cmd
+
+import (
+        "fmt"
+        "time"
+
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/cursor"
+        "github.com/spf13/cobra"
+)
+
+var (
+        listWorkspace string
+        listSearch    string
+        listLimit     int
+)
+
+// listCursorChatsCmd represents the list-cursor-chats command
+var listCursorChatsCmd = &amp;cobra.Command{
+        Use:   "list-cursor-chats",
+        Short: "List available chats from Cursor's AI pane",
+        Long: `List chat conversations available in Cursor's workspace storage.
+
+This command helps you discover what chats are available for import
+from Cursor's AI pane across all workspaces.
+
+Examples:
+  # List all available chats
+  cmctl list-cursor-chats
+
+  # Search for chats containing specific text
+  cmctl list-cursor-chats --search "authentication"
+
+  # List chats from specific workspace
+  cmctl list-cursor-chats --workspace /path/to/state.vscdb
+
+  # Limit number of results
+  cmctl list-cursor-chats --limit 5`,
+        RunE: runListCursorChats,
+}
+
+func init() <span class="cov0" title="0">{
+        rootCmd.AddCommand(listCursorChatsCmd)
+
+        listCursorChatsCmd.Flags().StringVar(&amp;listWorkspace, "workspace", "", "Path to specific workspace database")
+        listCursorChatsCmd.Flags().StringVar(&amp;listSearch, "search", "", "Search for chats containing text")
+        listCursorChatsCmd.Flags().IntVar(&amp;listLimit, "limit", 20, "Maximum number of chats to show")
+}</span>
+
+func runListCursorChats(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+        // Initialize workspace reader
+        var reader *cursor.WorkspaceReader
+        if listWorkspace != "" </span><span class="cov0" title="0">{
+                reader = cursor.NewWorkspaceReaderWithPath(listWorkspace)
+        }</span> else<span class="cov0" title="0"> {
+                reader = cursor.NewWorkspaceReader()
+        }</span>
+
+        <span class="cov0" title="0">var chats []cursor.ChatTabWithWorkspace
+        var err error
+
+        if listSearch != "" </span><span class="cov0" title="0">{
+                chats, err = reader.SearchChats(listSearch)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to search chats: %w", err)
+                }</span>
+        } else<span class="cov0" title="0"> {
+                chats, err = reader.ListAllChats()
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to list chats: %w", err)
+                }</span>
+        }
+
+        <span class="cov0" title="0">if len(chats) == 0 </span><span class="cov0" title="0">{
+                if listSearch != "" </span><span class="cov0" title="0">{
+                        fmt.Printf("No chats found matching '%s'\n", listSearch)
+                }</span> else<span class="cov0" title="0"> {
+                        fmt.Println("No chats found in Cursor workspaces")
+                }</span>
+                <span class="cov0" title="0">return nil</span>
+        }
+
+        // Apply limit
+        <span class="cov0" title="0">if listLimit &gt; 0 &amp;&amp; len(chats) &gt; listLimit </span><span class="cov0" title="0">{
+                chats = chats[:listLimit]
+        }</span>
+
+        // Display results
+        <span class="cov0" title="0">if listSearch != "" </span><span class="cov0" title="0">{
+                fmt.Printf("Found %d chat(s) matching '%s':\n\n", len(chats), listSearch)
+        }</span> else<span class="cov0" title="0"> {
+                fmt.Printf("Found %d chat(s) across workspaces:\n\n", len(chats))
+        }</span>
+
+        <span class="cov0" title="0">for i, chat := range chats </span><span class="cov0" title="0">{
+                fmt.Printf("Chat %d:\n", i+1)
+                fmt.Printf("  ID: %s\n", chat.ID)
+                fmt.Printf("  Title: %s\n", chat.GetDisplayTitle())
+                fmt.Printf("  Workspace: %s\n", chat.WorkspaceName)
+                fmt.Printf("  Messages: %d\n", len(chat.Messages))
+
+                if chat.Timestamp &gt; 0 </span><span class="cov0" title="0">{
+                        timestamp := time.Unix(chat.Timestamp/1000, 0)
+                        fmt.Printf("  Date: %s\n", timestamp.Format("2006-01-02 15:04:05"))
+                }</span>
+
+                // Show technical concepts if found
+                <span class="cov0" title="0">concepts := chat.ExtractTechnicalConcepts()
+                if len(concepts) &gt; 0 </span><span class="cov0" title="0">{
+                        conceptsStr := concepts[0]
+                        if len(concepts) &gt; 1 </span><span class="cov0" title="0">{
+                                conceptsStr += fmt.Sprintf(" (+%d more)", len(concepts)-1)
+                        }</span>
+                        <span class="cov0" title="0">fmt.Printf("  Concepts: %s\n", conceptsStr)</span>
+                }
+
+                <span class="cov0" title="0">fmt.Printf("  Preview: %s\n", truncateString(chat.GetContentPreview(150), 150))
+                fmt.Println()</span>
+        }
+
+        <span class="cov0" title="0">if listLimit &gt; 0 &amp;&amp; len(chats) == listLimit </span><span class="cov0" title="0">{
+                fmt.Printf("... (showing first %d results, use --limit to see more)\n", listLimit)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package cmd
+
+import (
+        "bytes"
+        "encoding/json"
+        "fmt"
+        "strings"
+        "text/template"
+
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
+        "gopkg.in/yaml.v3"
+        "k8s.io/client-go/util/jsonpath"
+)
+
+// OutputFormat represents the supported output formats
+type OutputFormat string
+
+const (
+        OutputFormatTable      OutputFormat = "table"
+        OutputFormatJSON       OutputFormat = "json"
+        OutputFormatYAML       OutputFormat = "yaml"
+        OutputFormatJSONPath   OutputFormat = "jsonpath"
+        OutputFormatGoTemplate OutputFormat = "go-template"
+)
+
+// OutputOptions contains options for formatting output
+type OutputOptions struct {
+        Format   OutputFormat
+        Template string // For jsonpath or go-template
+}
+
+// FormatOutput formats the given data according to the output options
+func FormatOutput(data interface{}, opts OutputOptions) (string, error) <span class="cov0" title="0">{
+        switch opts.Format </span>{
+        case OutputFormatJSON:<span class="cov0" title="0">
+                return formatJSON(data)</span>
+        case OutputFormatYAML:<span class="cov0" title="0">
+                return formatYAML(data)</span>
+        case OutputFormatJSONPath:<span class="cov0" title="0">
+                return formatJSONPath(data, opts.Template)</span>
+        case OutputFormatGoTemplate:<span class="cov0" title="0">
+                return formatGoTemplate(data, opts.Template)</span>
+        case OutputFormatTable:<span class="cov0" title="0">
+                fallthrough</span>
+        default:<span class="cov0" title="0">
+                return "", fmt.Errorf("table format should be handled by the calling function")</span>
+        }
+}
+
+// formatJSON formats data as JSON
+func formatJSON(data interface{}) (string, error) <span class="cov0" title="0">{
+        jsonData, err := json.MarshalIndent(data, "", "  ")
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to marshal JSON: %w", err)
+        }</span>
+        <span class="cov0" title="0">return string(jsonData), nil</span>
+}
+
+// formatYAML formats data as YAML
+func formatYAML(data interface{}) (string, error) <span class="cov0" title="0">{
+        yamlData, err := yaml.Marshal(data)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to marshal YAML: %w", err)
+        }</span>
+        <span class="cov0" title="0">return string(yamlData), nil</span>
+}
+
+// formatJSONPath formats data using JSONPath template
+func formatJSONPath(data interface{}, template string) (string, error) <span class="cov0" title="0">{
+        if template == "" </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("jsonpath template is required")
+        }</span>
+
+        // Convert data to JSON first
+        <span class="cov0" title="0">jsonData, err := json.Marshal(data)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to marshal data for jsonpath: %w", err)
+        }</span>
+
+        // Parse the JSONPath template
+        <span class="cov0" title="0">jp := jsonpath.New("output")
+        if err := jp.Parse(template); err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to parse jsonpath template: %w", err)
+        }</span>
+
+        // Apply the template to the data
+        <span class="cov0" title="0">var obj interface{}
+        if err := json.Unmarshal(jsonData, &amp;obj); err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to unmarshal data for jsonpath: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">var buf bytes.Buffer
+        if err := jp.Execute(&amp;buf, obj); err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to execute jsonpath template: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return buf.String(), nil</span>
+}
+
+// formatGoTemplate formats data using Go template
+func formatGoTemplate(data interface{}, templateStr string) (string, error) <span class="cov0" title="0">{
+        if templateStr == "" </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("go template is required")
+        }</span>
+
+        // Parse the template
+        <span class="cov0" title="0">tmpl, err := template.New("output").Parse(templateStr)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to parse go template: %w", err)
+        }</span>
+
+        // Execute the template
+        <span class="cov0" title="0">var buf bytes.Buffer
+        if err := tmpl.Execute(&amp;buf, data); err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to execute go template: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return buf.String(), nil</span>
+}
+
+// ParseOutputFormat parses the output format string
+func ParseOutputFormat(format string) (OutputOptions, error) <span class="cov0" title="0">{
+        // Handle formats like "jsonpath=.items[*].metadata.name" or "go-template={{.name}}"
+        if strings.Contains(format, "=") </span><span class="cov0" title="0">{
+                parts := strings.SplitN(format, "=", 2)
+                if len(parts) != 2 </span><span class="cov0" title="0">{
+                        return OutputOptions{}, fmt.Errorf("invalid output format: %s", format)
+                }</span>
+
+                <span class="cov0" title="0">formatType := parts[0]
+                template := parts[1]
+
+                switch formatType </span>{
+                case "jsonpath":<span class="cov0" title="0">
+                        return OutputOptions{Format: OutputFormatJSONPath, Template: template}, nil</span>
+                case "go-template":<span class="cov0" title="0">
+                        return OutputOptions{Format: OutputFormatGoTemplate, Template: template}, nil</span>
+                default:<span class="cov0" title="0">
+                        return OutputOptions{}, fmt.Errorf("unknown output format: %s", formatType)</span>
+                }
+        }
+
+        // Handle simple formats
+        <span class="cov0" title="0">switch format </span>{
+        case "json":<span class="cov0" title="0">
+                return OutputOptions{Format: OutputFormatJSON}, nil</span>
+        case "yaml":<span class="cov0" title="0">
+                return OutputOptions{Format: OutputFormatYAML}, nil</span>
+        case "table", "":<span class="cov0" title="0">
+                return OutputOptions{Format: OutputFormatTable}, nil</span>
+        default:<span class="cov0" title="0">
+                return OutputOptions{}, fmt.Errorf("unknown output format: %s", format)</span>
+        }
+}
+
+// FormatMemoryList formats a list of memories according to output options
+func FormatMemoryList(memories []storage.Memory, opts OutputOptions, showID bool) (string, error) <span class="cov0" title="0">{
+        switch opts.Format </span>{
+        case OutputFormatTable:<span class="cov0" title="0">
+                return formatMemoryTable(memories, showID), nil</span>
+        case OutputFormatJSON, OutputFormatYAML, OutputFormatJSONPath, OutputFormatGoTemplate:<span class="cov0" title="0">
+                // Create a wrapper structure for consistent API output
+                output := struct {
+                        APIVersion string           `json:"apiVersion" yaml:"apiVersion"`
+                        Kind       string           `json:"kind" yaml:"kind"`
+                        Items      []storage.Memory `json:"items" yaml:"items"`
+                }{
+                        APIVersion: "contextmemory.io/v1",
+                        Kind:       "MemoryList",
+                        Items:      memories,
+                }
+                return FormatOutput(output, opts)</span>
+        default:<span class="cov0" title="0">
+                return "", fmt.Errorf("unsupported output format: %s", opts.Format)</span>
+        }
+}
+
+// FormatSingleMemory formats a single memory according to output options
+func FormatSingleMemory(memory *storage.Memory, opts OutputOptions) (string, error) <span class="cov0" title="0">{
+        switch opts.Format </span>{
+        case OutputFormatTable:<span class="cov0" title="0">
+                return formatSingleMemoryTable(memory), nil</span>
+        case OutputFormatJSON, OutputFormatYAML, OutputFormatJSONPath, OutputFormatGoTemplate:<span class="cov0" title="0">
+                // Create a wrapper structure for consistent API output
+                output := struct {
+                        APIVersion string         `json:"apiVersion" yaml:"apiVersion"`
+                        Kind       string         `json:"kind" yaml:"kind"`
+                        Metadata   map[string]any `json:"metadata" yaml:"metadata"`
+                        Spec       storage.Memory `json:"spec" yaml:"spec"`
+                }{
+                        APIVersion: "contextmemory.io/v1",
+                        Kind:       "Memory",
+                        Metadata: map[string]any{
+                                "id":   memory.ID,
+                                "name": memory.Name,
+                        },
+                        Spec: *memory,
+                }
+                return FormatOutput(output, opts)</span>
+        default:<span class="cov0" title="0">
+                return "", fmt.Errorf("unsupported output format: %s", opts.Format)</span>
+        }
+}
+
+// formatMemoryTable formats memories as a table (existing logic)
+func formatMemoryTable(memories []storage.Memory, showID bool) string <span class="cov0" title="0">{
+        if len(memories) == 0 </span><span class="cov0" title="0">{
+                return "No resources found."
+        }</span>
+
+        <span class="cov0" title="0">var result strings.Builder
+
+        // Print header with conditional ID column
+        if showID </span><span class="cov0" title="0">{
+                result.WriteString(fmt.Sprintf("%-24s %-32s %-26s %-20s\n", "ID", "NAME", "LABELS", "AGE"))
+        }</span> else<span class="cov0" title="0"> {
+                result.WriteString(fmt.Sprintf("%-40s %-30s %-20s\n", "NAME", "LABELS", "AGE"))
+        }</span>
+
+        // Print memories with conditional ID column
+        <span class="cov0" title="0">for _, memory := range memories </span><span class="cov0" title="0">{
+                labels := formatLabelsCompact(memory.Labels)
+                age := formatAge(memory.UpdatedAt)
+
+                if showID </span><span class="cov0" title="0">{
+                        result.WriteString(fmt.Sprintf("%-24s %-32s %-26s %-20s\n",
+                                truncateString(memory.ID, 22),
+                                truncateString(memory.Name, 30),
+                                truncateString(labels, 24),
+                                age))
+                }</span> else<span class="cov0" title="0"> {
+                        result.WriteString(fmt.Sprintf("%-40s %-30s %-20s\n",
+                                truncateString(memory.Name, 38),
+                                truncateString(labels, 28),
+                                age))
+                }</span>
+        }
+
+        <span class="cov0" title="0">return result.String()</span>
+}
+
+// formatSingleMemoryTable formats a single memory as table
+func formatSingleMemoryTable(memory *storage.Memory) string <span class="cov0" title="0">{
+        var result strings.Builder
+
+        result.WriteString(fmt.Sprintf("Name:\t%s\n", memory.Name))
+        result.WriteString(fmt.Sprintf("ID:\t%s\n", memory.ID))
+        result.WriteString(fmt.Sprintf("Created:\t%s\n", memory.CreatedAt.Format("2006-01-02 15:04:05")))
+        result.WriteString(fmt.Sprintf("Updated:\t%s\n", memory.UpdatedAt.Format("2006-01-02 15:04:05")))
+
+        if len(memory.Labels) &gt; 0 </span><span class="cov0" title="0">{
+                result.WriteString("Labels:\t")
+                labels := make([]string, 0, len(memory.Labels))
+                for key, value := range memory.Labels </span><span class="cov0" title="0">{
+                        labels = append(labels, fmt.Sprintf("%s=%s", key, value))
+                }</span>
+                <span class="cov0" title="0">result.WriteString(strings.Join(labels, ","))
+                result.WriteString("\n")</span>
+        } else<span class="cov0" title="0"> {
+                result.WriteString("Labels:\tnone\n")
+        }</span>
+
+        <span class="cov0" title="0">result.WriteString("\nContent:\n")
+        result.WriteString(memory.Content)
+        result.WriteString("\n")
+
+        return result.String()</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package cmd
+
+import (
+        "fmt"
+        "os"
+
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var (
+        cfgFile   string
+        verbosity int
+)
+
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = &amp;cobra.Command{
+        Use:   "cmctl",
+        Short: "ContextMemory - File-based memory management for LLM development workflows",
+        Long: `ContextMemory is a clean, simple, file-based memory management system designed
+for LLM development workflows. It provides CRUD operations for session contexts,
+code snippets, and development notes with AI-assisted smart defaults.
+
+Features:
+- File-based storage (no servers or databases)
+- AI-assisted name and label generation
+- Flexible labeling system for organization
+- Fast search and filtering
+- Multiple output formats (JSON, YAML, JSONPath, Go templates)
+- Cross-platform single binary
+
+Verbosity levels:
+- -v=0 (quiet): Only essential output
+- -v=1 (normal): Standard messages (default)
+- -v=2 (verbose): Debug info and config details`,
+        Version: "0.6.1",
+}
+
+// Execute adds all child commands to the root command and sets flags appropriately.
+func Execute() error <span class="cov0" title="0">{
+        return rootCmd.Execute()
+}</span>
+
+func init() <span class="cov0" title="0">{
+        cobra.OnInitialize(initConfig)
+
+        // Global flags
+        rootCmd.PersistentFlags().StringVar(&amp;cfgFile, "config", "", "config file (default is $HOME/.contextmemory/config.yaml)")
+        rootCmd.PersistentFlags().String("storage-dir", "", "storage directory (default is $HOME/.contextmemory)")
+        rootCmd.PersistentFlags().String("provider", "file", "storage provider (file, s3, gcs, remote)")
+        rootCmd.PersistentFlags().IntVarP(&amp;verbosity, "verbosity", "v", 1, "verbosity level (0=quiet, 1=normal, 2=verbose)")
+
+        // Bind flags to viper
+        viper.BindPFlag("storage-dir", rootCmd.PersistentFlags().Lookup("storage-dir"))
+        viper.BindPFlag("provider", rootCmd.PersistentFlags().Lookup("provider"))
+        viper.BindPFlag("verbosity", rootCmd.PersistentFlags().Lookup("verbosity"))
+}</span>
+
+// initConfig reads in config file and ENV variables if set.
+func initConfig() <span class="cov0" title="0">{
+        if cfgFile != "" </span><span class="cov0" title="0">{
+                // Use config file from the flag.
+                viper.SetConfigFile(cfgFile)
+        }</span> else<span class="cov0" title="0"> {
+                // Find home directory.
+                home, err := os.UserHomeDir()
+                cobra.CheckErr(err)
+
+                // Search config in home directory with name ".contextmemory".
+                configDir := home + "/.contextmemory"
+                viper.AddConfigPath(configDir)
+                viper.SetConfigType("yaml")
+                viper.SetConfigName("config")
+        }</span>
+
+        <span class="cov0" title="0">viper.AutomaticEnv() // read in environment variables that match
+
+        // If a config file is found, read it in.
+        if err := viper.ReadInConfig(); err == nil </span><span class="cov0" title="0">{
+                // Only show config file info in verbose mode
+                if viper.GetInt("verbosity") &gt;= 2 </span><span class="cov0" title="0">{
+                        fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+                }</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package cmd
+
+import (
+        "fmt"
+
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var searchCmd = &amp;cobra.Command{
+        Use:   "search",
+        Short: "Search memories",
+        Long: `Search memories by text query and/or label selectors.
+
+Examples:
+  cmctl search --query "authentication"                        # Search by text
+  cmctl search --labels "type=session"                         # Search by labels
+  cmctl search --query "API" --labels "type=code" --limit 5    # Combined search
+  cmctl search --query "auth" -o json                          # JSON output
+  cmctl search -q "session" -o jsonpath='{.items[*].spec.name}' # Extract names`,
+        RunE: runSearch,
+}
+
+var (
+        searchQuery      string
+        searchLabels     string
+        searchLimit      int
+        searchOutputFlag string
+)
+
+func init() <span class="cov0" title="0">{
+        rootCmd.AddCommand(searchCmd)
+
+        searchCmd.Flags().StringVarP(&amp;searchQuery, "query", "q", "", "Text search query")
+        searchCmd.Flags().StringVarP(&amp;searchLabels, "labels", "l", "", "Label selector (format: key1=value1,key2=value2)")
+        searchCmd.Flags().IntVar(&amp;searchLimit, "limit", 10, "Limit results")
+        searchCmd.Flags().StringVarP(&amp;searchOutputFlag, "output", "o", "", "Output format: table|json|yaml|jsonpath=&lt;template&gt;|go-template=&lt;template&gt;")
+}</span>
+
+func runSearch(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+        // Initialize storage
+        storageDir := viper.GetString("storage-dir")
+        fs, err := storage.NewFileStorage(storageDir)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to initialize storage: %w", err)
+        }</span>
+
+        // Parse label selector
+        <span class="cov0" title="0">labelSelector := parseLabels(searchLabels)
+
+        // Create search request
+        req := storage.SearchRequest{
+                Query:         searchQuery,
+                LabelSelector: labelSelector,
+                Limit:         searchLimit,
+        }
+
+        // Search memories
+        result, err := fs.Search(req)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to search memories: %w", err)
+        }</span>
+
+        // Parse output format
+        <span class="cov0" title="0">outputOpts, err := ParseOutputFormat(searchOutputFlag)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("invalid output format: %w", err)
+        }</span>
+
+        // Format and print output
+        <span class="cov0" title="0">output, err := FormatMemoryList(result.Memories, outputOpts, false)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to format output: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">fmt.Print(output)
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package cmd
+
+import (
+        "fmt"
+        "strings"
+        "time"
+)
+
+// formatLabels formats labels for detailed display
+func formatLabels(labels map[string]string) string <span class="cov0" title="0">{
+        if len(labels) == 0 </span><span class="cov0" title="0">{
+                return "&lt;none&gt;"
+        }</span>
+
+        <span class="cov0" title="0">var pairs []string
+        for k, v := range labels </span><span class="cov0" title="0">{
+                pairs = append(pairs, fmt.Sprintf("%s=%s", k, v))
+        }</span>
+        <span class="cov0" title="0">return strings.Join(pairs, ",")</span>
+}
+
+// formatLabelsCompact formats labels for compact table display
+func formatLabelsCompact(labels map[string]string) string <span class="cov0" title="0">{
+        if len(labels) == 0 </span><span class="cov0" title="0">{
+                return "&lt;none&gt;"
+        }</span>
+
+        // Show only first 2 labels for table display
+        <span class="cov0" title="0">var pairs []string
+        count := 0
+        for k, v := range labels </span><span class="cov0" title="0">{
+                if count &gt;= 2 </span><span class="cov0" title="0">{
+                        pairs = append(pairs, "...")
+                        break</span>
+                }
+                <span class="cov0" title="0">pairs = append(pairs, fmt.Sprintf("%s=%s", k, v))
+                count++</span>
+        }
+        <span class="cov0" title="0">return strings.Join(pairs, ",")</span>
+}
+
+// formatAge formats time duration in kubectl-style (e.g., "2d", "3h", "45m")
+func formatAge(t time.Time) string <span class="cov0" title="0">{
+        duration := time.Since(t)
+
+        if duration &lt; time.Minute </span><span class="cov0" title="0">{
+                return fmt.Sprintf("%ds", int(duration.Seconds()))
+        }</span>
+        <span class="cov0" title="0">if duration &lt; time.Hour </span><span class="cov0" title="0">{
+                return fmt.Sprintf("%dm", int(duration.Minutes()))
+        }</span>
+        <span class="cov0" title="0">if duration &lt; 24*time.Hour </span><span class="cov0" title="0">{
+                return fmt.Sprintf("%dh", int(duration.Hours()))
+        }</span>
+        <span class="cov0" title="0">if duration &lt; 30*24*time.Hour </span><span class="cov0" title="0">{
+                return fmt.Sprintf("%dd", int(duration.Hours()/24))
+        }</span>
+        <span class="cov0" title="0">return fmt.Sprintf("%dw", int(duration.Hours()/(24*7)))</span>
+}
+
+// truncateString truncates a string to maxLen with appropriate padding
+func truncateString(s string, maxLen int) string <span class="cov0" title="0">{
+        if len(s) &lt;= maxLen </span><span class="cov0" title="0">{
+                return s
+        }</span>
+        <span class="cov0" title="0">if maxLen &lt;= 3 </span><span class="cov0" title="0">{
+                return s[:maxLen]
+        }</span>
+        <span class="cov0" title="0">return s[:maxLen-3] + "..."</span>
+}
+
+// parseLabels parses a comma-separated label selector string into a map
+// Format: "key1=value1,key2=value2" -&gt; map[string]string{"key1": "value1", "key2": "value2"}
+func parseLabels(labelSelector string) map[string]string <span class="cov0" title="0">{
+        labelMap := make(map[string]string)
+        if labelSelector == "" </span><span class="cov0" title="0">{
+                return labelMap
+        }</span>
+
+        <span class="cov0" title="0">pairs := strings.Split(labelSelector, ",")
+        for _, pair := range pairs </span><span class="cov0" title="0">{
+                parts := strings.SplitN(pair, "=", 2)
+                if len(parts) == 2 </span><span class="cov0" title="0">{
+                        key := strings.TrimSpace(parts[0])
+                        value := strings.TrimSpace(parts[1])
+                        if key != "" &amp;&amp; value != "" </span><span class="cov0" title="0">{
+                                labelMap[key] = value
+                        }</span>
+                }
+        }
+        <span class="cov0" title="0">return labelMap</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package cmd
+
+import (
+        "fmt"
+        "os"
+
+        "github.com/spf13/viper"
+)
+
+// VerbosityLevel represents different verbosity levels
+type VerbosityLevel int
+
+const (
+        Quiet   VerbosityLevel = 0 // Only errors and essential output
+        Normal  VerbosityLevel = 1 // Default level with standard messages
+        Verbose VerbosityLevel = 2 // Debug info, config details, etc.
+)
+
+// GetVerbosity returns the current verbosity level
+func GetVerbosity() VerbosityLevel <span class="cov0" title="0">{
+        return VerbosityLevel(viper.GetInt("verbosity"))
+}</span>
+
+// VPrintf prints formatted output only if verbosity level is met
+func VPrintf(level VerbosityLevel, format string, args ...interface{}) <span class="cov0" title="0">{
+        if GetVerbosity() &gt;= level </span><span class="cov0" title="0">{
+                fmt.Fprintf(os.Stderr, format, args...)
+        }</span>
+}
+
+// VPrintln prints a line only if verbosity level is met
+func VPrintln(level VerbosityLevel, args ...interface{}) <span class="cov0" title="0">{
+        if GetVerbosity() &gt;= level </span><span class="cov0" title="0">{
+                fmt.Fprintln(os.Stderr, args...)
+        }</span>
+}
+
+// DebugPrintf prints debug information (verbosity &gt;= 2)
+func DebugPrintf(format string, args ...interface{}) <span class="cov0" title="0">{
+        VPrintf(Verbose, "[DEBUG] "+format, args...)
+}</span>
+
+// DebugPrintln prints debug information (verbosity &gt;= 2)
+func DebugPrintln(args ...interface{}) <span class="cov0" title="0">{
+        if GetVerbosity() &gt;= Verbose </span><span class="cov0" title="0">{
+                debugArgs := append([]interface{}{"[DEBUG]"}, args...)
+                VPrintln(Verbose, debugArgs...)
+        }</span>
+}
+
+// IsQuiet returns true if verbosity is set to quiet mode
+func IsQuiet() bool <span class="cov0" title="0">{
+        return GetVerbosity() == Quiet
+}</span>
+
+// IsVerbose returns true if verbosity is &gt;= 2
+func IsVerbose() bool <span class="cov0" title="0">{
+        return GetVerbosity() &gt;= Verbose
+}</span>
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package providers
+
+import (
+        "fmt"
+)
+
+// TODO: Cloud storage providers - planned for future releases
+// These will provide distributed storage options for team collaboration
+// and backup scenarios. Current implementation focuses on local file storage.
+
+// Cloud provider constructors (not yet implemented)
+func NewS3Provider(config ProviderConfig) (interface{}, error) <span class="cov0" title="0">{
+        return nil, fmt.Errorf("S3 provider not yet implemented - planned for v1.1.0")
+}</span>
+
+func NewGCSProvider(config ProviderConfig) (interface{}, error) <span class="cov0" title="0">{
+        return nil, fmt.Errorf("GCS provider not yet implemented - planned for v1.1.0")
+}</span>
+
+func NewRemoteProvider(config ProviderConfig) (interface{}, error) <span class="cov0" title="0">{
+        return nil, fmt.Errorf("remote API provider not yet implemented - planned for v1.2.0")
+}</pre>
+		
+		<pre class="file" id="file14" style="display: none">package providers
+
+import "fmt"
+
+// UnsupportedProviderError represents an error for unsupported providers
+type UnsupportedProviderError struct {
+        ProviderType ProviderType
+}
+
+func (e *UnsupportedProviderError) Error() string <span class="cov0" title="0">{
+        return fmt.Sprintf("unsupported provider type: %s", e.ProviderType)
+}</span>
+
+// NewUnsupportedProviderError creates a new unsupported provider error
+func NewUnsupportedProviderError(providerType ProviderType) *UnsupportedProviderError <span class="cov0" title="0">{
+        return &amp;UnsupportedProviderError{ProviderType: providerType}
+}</span>
+
+// ProviderConfigError represents a configuration error
+type ProviderConfigError struct {
+        ProviderType ProviderType
+        Field        string
+        Message      string
+}
+
+func (e *ProviderConfigError) Error() string <span class="cov0" title="0">{
+        return fmt.Sprintf("provider %s config error in field '%s': %s", e.ProviderType, e.Field, e.Message)
+}</span>
+
+// NewProviderConfigError creates a new provider configuration error
+func NewProviderConfigError(providerType ProviderType, field, message string) *ProviderConfigError <span class="cov0" title="0">{
+        return &amp;ProviderConfigError{
+                ProviderType: providerType,
+                Field:        field,
+                Message:      message,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file15" style="display: none">package providers
+
+import (
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
+)
+
+// FileStorageProvider implements file-based storage
+type FileStorageProvider struct {
+        *storage.FileStorage
+        config ProviderConfig
+}
+
+// NewFileProvider creates a new file storage provider
+func NewFileProvider(config ProviderConfig) (StorageProvider, error) <span class="cov0" title="0">{
+        fileStorage, err := storage.NewFileStorage(config.StorageDir)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;FileStorageProvider{
+                FileStorage: fileStorage,
+                config:      config,
+        }, nil</span>
+}
+
+// GetProviderType returns the provider type
+func (f *FileStorageProvider) GetProviderType() ProviderType <span class="cov0" title="0">{
+        return FileProvider
+}</span>
+
+// GetProviderInfo returns provider-specific information
+func (f *FileStorageProvider) GetProviderInfo() map[string]interface{} <span class="cov0" title="0">{
+        info, _ := f.FileStorage.GetStorageInfo()
+        return map[string]interface{}{
+                "type":          "file",
+                "storageDir":    info.StorageDir,
+                "memoriesCount": info.MemoriesCount,
+                "totalSize":     info.TotalSize,
+                "provider":      "local-filesystem",
+        }
+}</span>
+
+// ValidateConfig validates the file provider configuration
+func (f *FileStorageProvider) ValidateConfig() error <span class="cov0" title="0">{
+        // File provider validation - basic health check
+        return f.FileStorage.Health()
+}</span>
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">package providers
+
+import (
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
+)
+
+// ProviderType represents different storage backend types
+type ProviderType string
+
+const (
+        FileProvider   ProviderType = "file"
+        S3Provider     ProviderType = "s3"
+        GCSProvider    ProviderType = "gcs"
+        RemoteProvider ProviderType = "remote"
+)
+
+// ProviderConfig contains configuration for storage providers
+type ProviderConfig struct {
+        Type ProviderType `yaml:"type" json:"type"`
+
+        // File provider config
+        StorageDir string `yaml:"storageDir,omitempty" json:"storageDir,omitempty"`
+
+        // Cloud provider config
+        Bucket    string `yaml:"bucket,omitempty" json:"bucket,omitempty"`
+        Region    string `yaml:"region,omitempty" json:"region,omitempty"`
+        KeyPrefix string `yaml:"keyPrefix,omitempty" json:"keyPrefix,omitempty"`
+
+        // Remote provider config
+        Endpoint string            `yaml:"endpoint,omitempty" json:"endpoint,omitempty"`
+        APIKey   string            `yaml:"apiKey,omitempty" json:"apiKey,omitempty"`
+        Headers  map[string]string `yaml:"headers,omitempty" json:"headers,omitempty"`
+
+        // Common config
+        Timeout    int  `yaml:"timeout,omitempty" json:"timeout,omitempty"`
+        RetryCount int  `yaml:"retryCount,omitempty" json:"retryCount,omitempty"`
+        EnableTLS  bool `yaml:"enableTLS,omitempty" json:"enableTLS,omitempty"`
+}
+
+// StorageProvider interface that all storage backends must implement
+type StorageProvider interface {
+        // Core storage operations (matches FileStorage methods)
+        Create(req storage.CreateMemoryRequest) (*storage.Memory, error)
+        Get(id string) (*storage.Memory, error)
+        Update(req storage.UpdateMemoryRequest) (*storage.Memory, error)
+        Delete(id string) error
+        List() ([]storage.Memory, error)
+        Search(req storage.SearchRequest) (*storage.SearchResponse, error)
+
+        // Provider-specific methods
+        GetProviderType() ProviderType
+        GetProviderInfo() map[string]interface{}
+        ValidateConfig() error
+}
+
+// ProviderFactory creates storage providers based on configuration
+type ProviderFactory struct {
+        providers map[ProviderType]func(ProviderConfig) (interface{}, error)
+}
+
+// NewProviderFactory creates a new provider factory
+func NewProviderFactory() *ProviderFactory <span class="cov0" title="0">{
+        factory := &amp;ProviderFactory{
+                providers: make(map[ProviderType]func(ProviderConfig) (interface{}, error)),
+        }
+
+        // Register implemented providers
+        factory.RegisterProvider(FileProvider, func(config ProviderConfig) (interface{}, error) </span><span class="cov0" title="0">{
+                return NewFileProvider(config)
+        }</span>)
+        
+        // Register placeholders for future providers (will return "not implemented" errors)
+        <span class="cov0" title="0">factory.RegisterProvider(S3Provider, NewS3Provider)
+        factory.RegisterProvider(GCSProvider, NewGCSProvider)
+        factory.RegisterProvider(RemoteProvider, NewRemoteProvider)
+
+        return factory</span>
+}
+
+// RegisterProvider registers a new storage provider
+func (f *ProviderFactory) RegisterProvider(providerType ProviderType, constructor func(ProviderConfig) (interface{}, error)) <span class="cov0" title="0">{
+        f.providers[providerType] = constructor
+}</span>
+
+// CreateProvider creates a storage provider instance
+func (f *ProviderFactory) CreateProvider(config ProviderConfig) (interface{}, error) <span class="cov0" title="0">{
+        constructor, exists := f.providers[config.Type]
+        if !exists </span><span class="cov0" title="0">{
+                return nil, NewUnsupportedProviderError(config.Type)
+        }</span>
+
+        <span class="cov0" title="0">provider, err := constructor(config)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Note: Validation moved to individual provider implementations
+
+        <span class="cov0" title="0">return provider, nil</span>
+}
+
+// GetSupportedProviders returns list of supported provider types
+func (f *ProviderFactory) GetSupportedProviders() []ProviderType <span class="cov0" title="0">{
+        var providers []ProviderType
+        for providerType := range f.providers </span><span class="cov0" title="0">{
+                providers = append(providers, providerType)
+        }</span>
+        <span class="cov0" title="0">return providers</span>
+}
+
+// GetProviderDefaults returns default configuration for a provider type
+func GetProviderDefaults(providerType ProviderType) ProviderConfig <span class="cov0" title="0">{
+        switch providerType </span>{
+        case FileProvider:<span class="cov0" title="0">
+                return ProviderConfig{
+                        Type:       FileProvider,
+                        StorageDir: "", // Will default to ~/.contextmemory
+                        Timeout:    30,
+                }</span>
+        case S3Provider:<span class="cov0" title="0">
+                return ProviderConfig{
+                        Type:       S3Provider,
+                        Region:     "us-east-1",
+                        KeyPrefix:  "contextmemory/",
+                        Timeout:    30,
+                        RetryCount: 3,
+                        EnableTLS:  true,
+                }</span>
+        case GCSProvider:<span class="cov0" title="0">
+                return ProviderConfig{
+                        Type:       GCSProvider,
+                        KeyPrefix:  "contextmemory/",
+                        Timeout:    30,
+                        RetryCount: 3,
+                        EnableTLS:  true,
+                }</span>
+        case RemoteProvider:<span class="cov0" title="0">
+                return ProviderConfig{
+                        Type:       RemoteProvider,
+                        Timeout:    30,
+                        RetryCount: 3,
+                        EnableTLS:  true,
+                }</span>
+        default:<span class="cov0" title="0">
+                return ProviderConfig{Type: FileProvider}</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">package utils
+
+import (
+        "fmt"
+        "math/rand"
+        "time"
+)
+
+// GenerateID generates a unique memory ID using timestamp and random suffix
+func GenerateID() string <span class="cov8" title="1">{
+        timestamp := time.Now().Unix()
+        random := rand.Intn(999999)
+        return fmt.Sprintf("mem_%x_%06x", timestamp, random)
+}</span>
+
+func init() <span class="cov8" title="1">{
+        rand.Seed(time.Now().UnixNano())
+}</span>
+</pre>
+		
+		<pre class="file" id="file18" style="display: none">package main
+
+import (
+        "os"
+
+        "github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd"
+)
+
+func main() <span class="cov0" title="0">{
+        if err := cmd.Execute(); err != nil </span><span class="cov0" title="0">{
+                os.Exit(1)
+        }</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

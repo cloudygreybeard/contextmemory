@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cloudygreybeard/contextmemory-v2/cmd/cm/internal/storage"
+	"github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -145,16 +145,9 @@ func deleteAllMemories(fs *storage.FileStorage, verbosity int) error {
 
 func deleteMemoriesByLabels(fs *storage.FileStorage, labelSelector string, verbosity int) error {
 	// Parse label selector
-	labels := make(map[string]string)
-	if labelSelector != "" {
-		pairs := strings.Split(labelSelector, ",")
-		for _, pair := range pairs {
-			parts := strings.SplitN(pair, "=", 2)
-			if len(parts) != 2 {
-				return fmt.Errorf("invalid label format: %s", pair)
-			}
-			labels[parts[0]] = parts[1]
-		}
+	labels := parseLabels(labelSelector)
+	if len(labels) == 0 {
+		return fmt.Errorf("invalid label selector format: %s", labelSelector)
 	}
 
 	// Search for matching memories

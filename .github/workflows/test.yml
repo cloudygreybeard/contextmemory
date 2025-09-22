@@ -1,0 +1,104 @@
+name: Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-go:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.20', '1.21']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Run tests
+        run: make test.cli
+
+      - name: Run linting
+        uses: golangci/golangci-lint-action@v3
+        with:
+          working-directory: cmd/cmctl
+
+  test-multiarch-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Test multi-architecture builds
+        run: |
+          # Test standard builds
+          GOOS=linux GOARCH=amd64 make build.cli
+          GOOS=linux GOARCH=arm64 make build.cli
+          GOOS=darwin GOARCH=amd64 make build.cli
+          GOOS=darwin GOARCH=arm64 make build.cli
+          GOOS=windows GOARCH=amd64 make build.cli
+
+      - name: Test WebAssembly build
+        run: |
+          GOOS=js GOARCH=wasm make build.cli.wasm
+
+  test-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install dependencies
+        run: cd ui && npm ci
+
+      - name: Run tests
+        run: cd ui && npm test
+
+      - name: Build extension
+        run: make build.ui
+
+      - name: Package extension
+        run: make package.ui
+
+  integration-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build CLI
+        run: make build.cli
+
+      - name: Test CLI functionality
+        run: make test.integration

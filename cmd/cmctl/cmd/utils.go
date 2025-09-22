@@ -68,3 +68,25 @@ func truncateString(s string, maxLen int) string {
 	}
 	return s[:maxLen-3] + "..."
 }
+
+// parseLabels parses a comma-separated label selector string into a map
+// Format: "key1=value1,key2=value2" -> map[string]string{"key1": "value1", "key2": "value2"}
+func parseLabels(labelSelector string) map[string]string {
+	labelMap := make(map[string]string)
+	if labelSelector == "" {
+		return labelMap
+	}
+
+	pairs := strings.Split(labelSelector, ",")
+	for _, pair := range pairs {
+		parts := strings.SplitN(pair, "=", 2)
+		if len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			if key != "" && value != "" {
+				labelMap[key] = value
+			}
+		}
+	}
+	return labelMap
+}

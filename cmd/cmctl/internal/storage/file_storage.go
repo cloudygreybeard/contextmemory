@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudygreybeard/contextmemory-v2/cmd/cm/internal/utils"
+	"github.com/cloudygreybeard/contextmemory/cmd/cmctl/internal/utils"
 )
 
 // FileStorage implements file-based storage for memories
@@ -41,7 +41,7 @@ func NewFileStorage(storageDir string) (*FileStorage, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to get home directory: %w", err)
 		}
-		storageDir = filepath.Join(home, ".contextmemory-v2")
+		storageDir = filepath.Join(home, ".contextmemory")
 	}
 
 	fs := &FileStorage{
@@ -143,7 +143,7 @@ func (fs *FileStorage) Create(req CreateMemoryRequest) (*Memory, error) {
 // Get retrieves a memory by ID
 func (fs *FileStorage) Get(id string) (*Memory, error) {
 	memoryFile := filepath.Join(fs.memoriesDir, id+".json")
-	
+
 	data, err := os.ReadFile(memoryFile)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -211,7 +211,7 @@ func (fs *FileStorage) Update(req UpdateMemoryRequest) (*Memory, error) {
 // Delete removes a memory by ID
 func (fs *FileStorage) Delete(id string) error {
 	memoryFile := filepath.Join(fs.memoriesDir, id+".json")
-	
+
 	if _, err := os.Stat(memoryFile); os.IsNotExist(err) {
 		return fmt.Errorf("memory not found: %s", id)
 	}
@@ -432,7 +432,7 @@ func (fs *FileStorage) updateIndex(memory *Memory, operation string) error {
 
 func (fs *FileStorage) readIndex() (Index, error) {
 	var index Index
-	
+
 	data, err := os.ReadFile(fs.indexFile)
 	if err != nil {
 		return index, err

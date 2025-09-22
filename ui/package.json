@@ -10,7 +10,7 @@
     "url": "https://github.com/cloudygreybeard/contextmemory"
   },
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.90.0"
   },
   "categories": [
     "Other",
@@ -36,34 +36,10 @@
   "contributes": {
     "commands": [
       {
-        "command": "contextmemory.createMemory",
-        "title": "Create Memory",
-        "category": "ContextMemory",
-        "icon": "$(add)"
-      },
-      {
-        "command": "contextmemory.createMemoryFromSelection",
-        "title": "Create Memory from Selection",
-        "category": "ContextMemory",
-        "icon": "$(bookmark)"
-      },
-      {
         "command": "contextmemory.createMemoryFromChat",
-        "title": "Create Memory from Current Chat",
+        "title": "Capture Current Chat",
         "category": "ContextMemory",
         "icon": "$(comment-discussion)"
-      },
-      {
-        "command": "contextmemory.searchMemories",
-        "title": "Search Memories",
-        "category": "ContextMemory",
-        "icon": "$(search)"
-      },
-      {
-        "command": "contextmemory.listMemories",
-        "title": "List All Memories",
-        "category": "ContextMemory",
-        "icon": "$(list-tree)"
       },
       {
         "command": "contextmemory.refreshMemories",
@@ -82,30 +58,6 @@
         "title": "Check Health",
         "category": "ContextMemory",
         "icon": "$(pulse)"
-      },
-      {
-        "command": "contextmemory.deleteMemory",
-        "title": "Delete Memory",
-        "category": "ContextMemory",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "contextmemory.deleteMemoriesByLabels",
-        "title": "Delete Memories by Labels",
-        "category": "ContextMemory",
-        "icon": "$(filter)"
-      },
-      {
-        "command": "contextmemory.deleteAllMemories",
-        "title": "Delete All Memories",
-        "category": "ContextMemory",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "contextmemory.openConfig",
-        "title": "Open Configuration",
-        "category": "ContextMemory",
-        "icon": "$(settings-gear)"
       }
     ],
     "views": {
@@ -131,67 +83,32 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "contextmemory.createMemory"
-        },
-        {
-          "command": "contextmemory.createMemoryFromSelection",
-          "when": "editorHasSelection"
-        },
-        {
           "command": "contextmemory.createMemoryFromChat"
-        },
-        {
-          "command": "contextmemory.searchMemories"
-        },
-        {
-          "command": "contextmemory.listMemories"
         },
         {
           "command": "contextmemory.refreshMemories"
         },
         {
           "command": "contextmemory.health"
-        },
-        {
-          "command": "contextmemory.deleteMemory"
-        },
-        {
-          "command": "contextmemory.deleteMemoriesByLabels"
-        },
-        {
-          "command": "contextmemory.deleteAllMemories"
-        },
-        {
-          "command": "contextmemory.openConfig"
         }
       ],
       "editor/context": [
         {
-          "command": "contextmemory.createMemoryFromSelection",
-          "when": "editorHasSelection",
-          "group": "contextmemory@1"
-        },
-        {
           "command": "contextmemory.createMemoryFromChat",
           "when": "resourceExtname == .md",
-          "group": "contextmemory@2"
+          "group": "contextmemory@1"
         }
       ],
       "view/title": [
         {
-          "command": "contextmemory.createMemory",
+          "command": "contextmemory.createMemoryFromChat",
           "when": "view == contextmemory.memories",
           "group": "navigation@1"
         },
         {
-          "command": "contextmemory.searchMemories",
-          "when": "view == contextmemory.memories",
-          "group": "navigation@2"
-        },
-        {
           "command": "contextmemory.refreshMemories",
           "when": "view == contextmemory.memories",
-          "group": "navigation@3"
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -199,11 +116,6 @@
           "command": "contextmemory.openMemory",
           "when": "view == contextmemory.memories && viewItem == memory",
           "group": "navigation@1"
-        },
-        {
-          "command": "contextmemory.deleteMemory",
-          "when": "view == contextmemory.memories && viewItem == memory",
-          "group": "navigation@2"
         }
       ]
     },
@@ -223,7 +135,12 @@
         "contextmemory.provider": {
           "type": "string",
           "default": "file",
-          "enum": ["file", "s3", "gcs", "remote"],
+          "enum": [
+            "file",
+            "s3",
+            "gcs",
+            "remote"
+          ],
           "description": "Storage provider to use"
         },
         "contextmemory.verbosity": {
@@ -265,16 +182,14 @@
     "install-extension": "code --install-extension contextmemory-0.6.0.vsix"
   },
   "devDependencies": {
+    "@types/node": "^18.19.127",
     "@types/vscode": "^1.85.0",
-    "@types/node": "18.x",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
-    "eslint": "^8.54.0",
-    "typescript": "^5.3.0",
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "^2.3.8",
-    "@vscode/vsce": "^2.22.0"
-  },
-  "dependencies": {}
+    "@vscode/vsce": "^2.22.0",
+    "eslint": "^8.54.0",
+    "typescript": "^5.9.2"
+  }
 }
-

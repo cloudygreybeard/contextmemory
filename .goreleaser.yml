@@ -1,0 +1,136 @@
+project_name: contextmemory
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  # Standard CLI builds for multiple platforms
+  - id: cmctl
+    main: ./cmd/cmctl
+    binary: cmctl
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64  # Windows ARM64 support limited
+    ldflags:
+      - -s -w
+      - -X github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd.version={{.Version}}
+      - -X github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd.commit={{.Commit}}
+      - -X github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd.date={{.Date}}
+
+  # WebAssembly build for VS Code extension embedding
+  - id: cmctl-wasm
+    main: ./cmd/cmctl
+    binary: cmctl
+    env:
+      - CGO_ENABLED=0
+      - GOOS=js
+      - GOARCH=wasm
+    goos:
+      - js
+    goarch:
+      - wasm
+    ldflags:
+      - -s -w
+      - -X github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd.version={{.Version}}
+
+archives:
+  - id: standard
+    builds:
+      - cmctl
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    files:
+      - README.md
+      - LICENSE
+      - CONTRIBUTING.md
+
+  # Special handling for WebAssembly
+  - id: wasm
+    builds:
+      - cmctl-wasm
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      WebAssembly
+    files:
+      - README.md
+      - LICENSE
+      - ui/src/wasm/wasm_exec.js
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^style:'
+      - '^refactor:'
+      - '^ci:'
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: 'Bug fixes'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: 'Performance improvements'
+      regexp: '^.*?perf(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: Others
+      order: 999
+
+release:
+  github:
+    owner: cloudygreybeard
+    name: contextmemory
+  draft: false
+  prerelease: auto
+  name_template: "{{.ProjectName}} v{{.Version}}"
+  footer: |
+    ## Installation
+    
+    ### CLI Tool
+    Download the appropriate binary for your platform from the assets above.
+    
+    ### VS Code Extension
+    Install from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=cloudygreybeard.contextmemory) or download the `.vsix` file.
+    
+    ### WebAssembly Integration
+    The WebAssembly build is automatically included in the VS Code extension for embedded functionality.
+
+# Custom hooks for extension building
+after:
+  hooks:
+    - cmd: make build.ui
+      dir: ./
+    - cmd: make package.ui
+      dir: ./

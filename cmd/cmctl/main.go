@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/cloudygreybeard/contextmemory-v2/cmd/cm/cmd"
+	"github.com/cloudygreybeard/contextmemory/cmd/cmctl/cmd"
 )
 
 func main() {

@@ -11,6 +11,9 @@ help:
 	@echo "Setup & Build:"
 	@echo "  setup           Initialize development environment"
 	@echo "  build           Build all components"
+	@echo "  build.cli       Build CLI for current platform"
+	@echo "  build.cli.wasm  Build CLI for WebAssembly"
+	@echo "  build.cli.all   Build CLI for all architectures"
 	@echo "  clean           Clean build artifacts"
 	@echo ""
 	@echo "Development:"
@@ -20,6 +23,8 @@ help:
 	@echo ""
 	@echo "Testing:"
 	@echo "  test            Run all tests"
+	@echo "  test.cli        Test CLI functionality"
+	@echo "  test.integration Run CLI integration tests"
 	@echo "  test.core       Test core functionality"
 	@echo "  test.storage    Test storage backend"
 	@echo "  test.ui         Test UI components"
@@ -27,6 +32,10 @@ help:
 	@echo "Installation:"
 	@echo "  install         Install extension locally"
 	@echo "  package         Create extension package"
+	@echo ""
+	@echo "Release:"
+	@echo "  release         Create release with GoReleaser"
+	@echo "  release.snapshot Create snapshot release"
 	@echo ""
 	@echo "Information:"
 	@echo "  info.status     Show project status"
@@ -68,11 +77,36 @@ build.storage:
 build.cli:
 	@echo "[BUILD] Building Go CLI..."
 	@if [ -d cmd/cmctl ]; then \
-		cd cmd/cmctl && go build -o cmctl . && echo "Go CLI built successfully"; \
+		cd cmd/cmctl && go build -ldflags="-s -w" -o cmctl . && echo "Go CLI built successfully"; \
 	else \
 		echo "No Go CLI found"; \
 	fi
 	@echo "[SUCCESS] CLI built"
+
+# Build CLI for WebAssembly
+build.cli.wasm:
+	@echo "[BUILD] Building CLI for WebAssembly..."
+	@if [ -d cmd/cmctl ]; then \
+		cd cmd/cmctl && GOOS=js GOARCH=wasm go build -ldflags="-s -w" -o cmctl.wasm . && \
+		echo "WebAssembly CLI built successfully"; \
+		mkdir -p ../../ui/src/wasm; \
+		find "$$(go env GOROOT)" -name "wasm_exec.js" -exec cp {} ../../ui/src/wasm/ \; 2>/dev/null || echo "wasm_exec.js not found"; \
+		mv cmctl.wasm ../../ui/src/wasm/; \
+	else \
+		echo "No Go CLI found"; \
+	fi
+	@echo "[SUCCESS] CLI WebAssembly build completed"
+
+# Build CLI for all architectures (requires GoReleaser)
+build.cli.all:
+	@echo "[BUILD] Building CLI for all architectures..."
+	@if command -v goreleaser >/dev/null 2>&1; then \
+		goreleaser build --snapshot --clean; \
+	else \
+		echo "[ERROR] GoReleaser not installed. Install with: go install github.com/goreleaser/goreleaser@latest"; \
+		exit 1; \
+	fi
+	@echo "[SUCCESS] Multi-architecture builds completed"
 
 build.ui:
 	@echo "[BUILD] Building VS Code extension..."
@@ -161,7 +195,78 @@ clean:
 	@find . -name "node_modules" -type d -exec rm -rf {} + 2>/dev/null || true
 	@find . -name "*.log" -type f -delete 2>/dev/null || true
 	@find . -name "dist" -type d -exec rm -rf {} + 2>/dev/null || true
+	@rm -f cmd/cmctl/cmctl 2>/dev/null || true
+	@rm -f cmd/cmctl/cmctl.wasm 2>/dev/null || true
+	@rm -f ui/src/wasm/cmctl.wasm 2>/dev/null || true
+	@rm -f ui/src/wasm/wasm_exec.js 2>/dev/null || true
+	@rm -f ui/*.vsix 2>/dev/null || true
+	@rm -f cmd/cmctl/coverage.out 2>/dev/null || true
+	@rm -f cmd/cmctl/coverage.html 2>/dev/null || true
 	@echo "[SUCCESS] Build artifacts cleaned"
+
+# Release with GoReleaser
+release:
+	@echo "[RELEASE] Creating release..."
+	@if command -v goreleaser >/dev/null 2>&1; then \
+		goreleaser release --clean; \
+	else \
+		echo "[ERROR] GoReleaser not installed. Install with: go install github.com/goreleaser/goreleaser@latest"; \
+		exit 1; \
+	fi
+	@echo "[SUCCESS] Release completed"
+
+# Release snapshot for testing
+release.snapshot:
+	@echo "[RELEASE] Creating snapshot release..."
+	@if command -v goreleaser >/dev/null 2>&1; then \
+		goreleaser release --snapshot --clean; \
+	else \
+		echo "[ERROR] GoReleaser not installed. Install with: go install github.com/goreleaser/goreleaser@latest"; \
+		exit 1; \
+	fi
+	@echo "[SUCCESS] Snapshot release completed"
+
+# Test CLI functionality  
+test.cli:
+	@echo "[TEST] Running Go unit tests..."
+	cd cmd/cmctl && go test -v ./...
+
+test.cli.coverage:
+	@echo "[TEST] Running Go tests with coverage..."
+	cd cmd/cmctl && go test -v -cover ./...
+
+test.cli.coverage.html:
+	@echo "[TEST] Generating HTML coverage report..."
+	cd cmd/cmctl && go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out -o coverage.html
+	@echo "[INFO] Coverage report: cmd/cmctl/coverage.html"
+
+test.cli.functional:
+	@echo "[TEST] Running CLI functional tests..."
+	./scripts/test-cli.sh
+
+# Run integration tests
+test.integration:
+	@echo "[TEST] Running integration tests..."
+	./scripts/test-integration.sh
+
+test.all: test.cli test.cli.functional test.integration
+	@echo "[SUCCESS] All tests passed"
+
+test.all.coverage: test.cli.coverage test.cli.functional test.integration
+	@echo "[SUCCESS] All tests with coverage completed"
+
+validate.release:
+	@echo "[VALIDATE] Running release validation..."
+	./scripts/validate-release.sh
+
+lint:
+	@echo "[LINT] Checking code quality..."
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		cd cmd/cmctl && golangci-lint run; \
+	else \
+		echo "[INFO] golangci-lint not found, using go vet"; \
+		cd cmd/cmctl && go vet ./...; \
+	fi
 
 # Development environment management
 dev.start:
