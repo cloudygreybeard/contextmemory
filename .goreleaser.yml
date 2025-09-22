@@ -1,9 +1,12 @@
 project_name: contextmemory
 
+gomod:
+  dir: ./cmd/cmctl
+
 before:
   hooks:
-    - cd cmd/cmctl && go mod tidy
-    - cd cmd/cmctl && go generate ./...
+    - go mod tidy
+    - go generate ./...
     - make build.ui
     - make package.ui
 
