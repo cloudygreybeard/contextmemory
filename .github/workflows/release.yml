@@ -23,6 +23,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
+          cache-dependency-path: cmd/cmctl/go.sum
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -55,15 +56,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload VS Code Extension
-        uses: actions/upload-release-asset@v1
+      - name: Build VS Code Extension
+        run: make package.ui
+
+      - name: Upload VS Code Extension to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./ui/*.vsix
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.goreleaser.outputs.upload_url }}
-          asset_path: ./ui/contextmemory-${{ github.ref_name }}.vsix
-          asset_name: contextmemory-${{ github.ref_name }}.vsix
-          asset_content_type: application/zip
 
   publish-extension:
     needs: goreleaser

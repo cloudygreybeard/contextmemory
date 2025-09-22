@@ -2,7 +2,7 @@ name: Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 'feature/*', 'fix/*', 'hotfix/*' ]
   pull_request:
     branches: [ main ]
 
@@ -20,9 +20,17 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
+          cache-dependency-path: cmd/cmctl/go.sum
 
-      - name: Run tests
-        run: make test.cli
+      - name: Run tests with coverage
+        run: make test.cli.coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./cmd/cmctl/coverage.out
+          flags: unittests
+          name: codecov-go-${{ matrix.go-version }}
 
       - name: Run linting
         uses: golangci/golangci-lint-action@v3
@@ -39,6 +47,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
+          cache-dependency-path: cmd/cmctl/go.sum
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -96,6 +105,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
+          cache-dependency-path: cmd/cmctl/go.sum
 
       - name: Build CLI
         run: make build.cli

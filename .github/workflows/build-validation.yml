@@ -1,0 +1,84 @@
+name: Build Validation
+
+on:
+  push:
+    branches: [ main, 'feature/*', 'fix/*', 'hotfix/*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache-dependency-path: cmd/cmctl/go.sum
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            ui/package-lock.json
+
+      - name: Install Node.js dependencies
+        run: |
+          npm ci
+          cd ui && npm ci
+
+      - name: Clean build
+        run: make clean
+
+      - name: Full build
+        run: make build
+
+      - name: Verify CLI version
+        run: |
+          ./cmd/cmctl/cmctl --version
+          echo "CLI built successfully"
+
+      - name: Verify Extension package
+        run: |
+          ls -la ui/*.vsix
+          echo "Extension packaged successfully"
+
+      - name: Run integration tests
+        run: make test.integration
+
+      - name: Validate release readiness
+        run: |
+          if [ -f scripts/validate-release.sh ]; then
+            make validate.release
+          else
+            echo "Release validation script not found, skipping"
+          fi
+
+  check-version-consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check version consistency
+        run: |
+          CLI_VERSION=$(grep -o 'Version: "[^"]*"' cmd/cmctl/cmd/root.go | cut -d'"' -f2)
+          ROOT_VERSION=$(grep -o '"version": "[^"]*"' package.json | cut -d'"' -f4)
+          UI_VERSION=$(grep -o '"version": "[^"]*"' ui/package.json | cut -d'"' -f4)
+          
+          echo "CLI Version: $CLI_VERSION"
+          echo "Root Version: $ROOT_VERSION" 
+          echo "UI Version: $UI_VERSION"
+          
+          if [ "$CLI_VERSION" != "$ROOT_VERSION" ] || [ "$CLI_VERSION" != "$UI_VERSION" ]; then
+            echo "❌ Version mismatch detected!"
+            exit 1
+          else
+            echo "✅ All versions are consistent: $CLI_VERSION"
+          fi
