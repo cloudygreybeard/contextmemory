@@ -2,14 +2,10 @@ project_name: contextmemory
 
 before:
   hooks:
-    - cmd: go mod tidy
-      dir: ./cmd/cmctl
-    - cmd: go generate ./...
-      dir: ./cmd/cmctl
-    - cmd: make build.ui
-      dir: ./
-    - cmd: make package.ui
-      dir: ./
+    - cd cmd/cmctl && go mod tidy
+    - cd cmd/cmctl && go generate ./...
+    - make build.ui
+    - make package.ui
 
 builds:
   # Standard CLI builds for multiple platforms
