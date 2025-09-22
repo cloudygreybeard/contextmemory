@@ -102,7 +102,7 @@ func TestGetNonExistentMemory(t *testing.T) {
 		t.Fatalf("Failed to create FileStorage: %v", err)
 	}
 
-	_, err := fs.Get("nonexistent")
+	_, err = fs.Get("nonexistent")
 	if err == nil {
 		t.Error("Expected error for nonexistent memory")
 	}
@@ -246,7 +246,7 @@ func TestHealth(t *testing.T) {
 		t.Fatalf("Failed to create FileStorage: %v", err)
 	}
 
-	err := fs.Health()
+	err = fs.Health()
 	if err != nil {
 		t.Errorf("Health check failed: %v", err)
 	}
@@ -265,7 +265,7 @@ func TestStorageInfo(t *testing.T) {
 		Content: "Test content",
 	}
 
-	_, err := fs.Create(req)
+	_, err = fs.Create(req)
 	if err != nil {
 		t.Fatalf("Failed to create memory: %v", err)
 	}
