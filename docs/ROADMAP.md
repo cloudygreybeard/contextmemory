@@ -2,7 +2,7 @@
 
 ## Current Status: v0.6.1 
 
-### ✅ Completed Features
+### Completed Features
 - Core CRUD operations for memory management
 - File-based storage with extensible provider architecture
 - `cmctl` CLI with `kubectl`-style commands and output formats
@@ -15,12 +15,12 @@
 
 ## v0.7.0 - Stability & Polish (Q4 2025)
 
-### 🎯 Primary Goals
+### Primary Goals
 - Production-ready stability
 - Enhanced user experience
 - Performance optimizations
 
-### 📋 Features
+### Features
 - [ ] **Enhanced Chat Processing**
   - Improved topic extraction algorithms
   - Better technical concept recognition
@@ -43,12 +43,12 @@
 
 ## v0.8.0 - Advanced Features (Q1 2026)
 
-### 🎯 Primary Goals
+### Primary Goals
 - Advanced workflow integration
 - Enhanced search capabilities
 - Better organization features
 
-### 📋 Features
+### Features
 - [ ] **Advanced Search**
   - Full-text search across memory content
   - Complex label-based queries
@@ -66,12 +66,12 @@
 
 ## v1.0.0 - Production Release (Q2 2026)
 
-### 🎯 Primary Goals
+### Primary Goals
 - Production-grade reliability
 - Complete feature set
 - Comprehensive documentation
 
-### 📋 Requirements for v1.0
+### Requirements for v1.0
 - [ ] **Stability**
   - Zero data loss guarantees
   - Comprehensive error handling

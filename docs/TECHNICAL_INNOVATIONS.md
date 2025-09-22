@@ -57,10 +57,10 @@ Current Architecture:
 ```
 
 Benefits of this approach:
-- ✅ **Reliability**: Proven subprocess communication patterns
-- ✅ **Separation**: Clear boundaries between CLI and UI components  
-- ✅ **Flexibility**: Independent development and deployment cycles
-- ✅ **Simplicity**: No complex runtime integration
+- **Reliability**: Proven subprocess communication patterns
+- **Separation**: Clear boundaries between CLI and UI components  
+- **Flexibility**: Independent development and deployment cycles
+- **Simplicity**: No complex runtime integration
 
 ### WebAssembly Integration: Future Roadmap
 

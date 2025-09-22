@@ -250,7 +250,7 @@ make validate.release   # Validate release readiness
 
 Our GitHub Actions workflows ensure quality and automated releases:
 
-**🔄 Continuous Integration:**
+**Continuous Integration:**
 - **Test Workflow**: Runs on pushes to `main`, `feature/*`, `fix/*`, `hotfix/*` and PRs
   - Go testing across versions (1.20, 1.21) with coverage reporting
   - Multi-architecture builds (Linux, macOS, Windows, ARM64, WebAssembly)
@@ -262,13 +262,13 @@ Our GitHub Actions workflows ensure quality and automated releases:
   - Version consistency checking across components
   - Release readiness validation
 
-**🚀 Automated Releases:**
+**Automated Releases:**
 - **Release Workflow**: Triggered on `v*` tags
   - GoReleaser for multi-platform CLI binaries
   - Automated VS Code Marketplace publishing
   - GitHub release creation with assets
 
-**📊 Quality Assurance:**
+**Quality Assurance:**
 - Coverage reporting via Codecov
 - Dependency caching for faster builds
 - Modern GitHub Actions with proper error handling

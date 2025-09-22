@@ -24,10 +24,10 @@ From `go mod why github.com/mattn/go-sqlite3`:
 ## WebAssembly Compatibility Confirmed
 
 The pure Go dependency chain enables WebAssembly compilation:
-- ✅ `gorm.io/gorm` - Pure Go ORM
-- ✅ `github.com/glebarez/sqlite` - Pure Go GORM driver  
-- ✅ `modernc.org/sqlite` - Pure Go SQLite implementation
-- ❌ `github.com/mattn/go-sqlite3` - CGO-based (not used by our code)
+- `gorm.io/gorm` - Pure Go ORM
+- `github.com/glebarez/sqlite` - Pure Go GORM driver  
+- `modernc.org/sqlite` - Pure Go SQLite implementation
+- `github.com/mattn/go-sqlite3` - CGO-based (not used by our code)
 
 ## Architecture Validation
 

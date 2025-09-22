@@ -71,11 +71,11 @@ Our GitHub Actions workflows automatically test all changes:
 
 ### Workflows That Run on Your Branch
 
-**🔄 On Push to `feature/*`, `fix/*`, `hotfix/*`:**
+**On Push to `feature/*`, `fix/*`, `hotfix/*`:**
 - **Test Workflow**: Go unit tests, multi-arch builds, extension testing
 - **Build Validation**: Full clean builds, version consistency, integration tests
 
-**📝 On Pull Request to `main`:**
+**On Pull Request to `main`:**
 - All test workflows run again
 - Comprehensive integration testing across OS matrix
 - Coverage reporting and quality checks
@@ -93,7 +93,7 @@ Our GitHub Actions workflows automatically test all changes:
 
 Check workflow status at: https://github.com/cloudygreybeard/contextmemory/actions
 
-All workflows must pass ✅ before PR can be merged.
+All workflows must pass before PR can be merged.
 
 ## Code Quality
 
@@ -105,7 +105,7 @@ All workflows must pass ✅ before PR can be merged.
 
 ## Review Process
 
-1. **Automated checks must pass** ✅
+1. **Automated checks must pass**
    - All GitHub Actions workflows
    - Coverage requirements met
    - No linting errors

@@ -147,7 +147,7 @@ func (fs *FileStorage) Get(id string) (*Memory, error) {
 	data, err := os.ReadFile(memoryFile)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil // Memory not found
+			return nil, fmt.Errorf("memory not found: %s", id)
 		}
 		return nil, fmt.Errorf("failed to read memory file: %w", err)
 	}

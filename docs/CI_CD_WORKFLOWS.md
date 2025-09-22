@@ -79,12 +79,12 @@ All workflows use optimized caching:
 ## Quality Gates
 
 ### Required Checks
-- ✅ All unit tests pass
-- ✅ Integration tests pass across OS matrix
-- ✅ Multi-architecture builds succeed
-- ✅ Extension packages successfully
-- ✅ Version consistency maintained
-- ✅ Linting passes with no errors
+- All unit tests pass
+- Integration tests pass across OS matrix
+- Multi-architecture builds succeed
+- Extension packages successfully
+- Version consistency maintained
+- Linting passes with no errors
 
 ### Coverage Requirements
 - Go tests report coverage to Codecov

@@ -39,7 +39,7 @@ const testCases = [
     { cli: '1.0.0', ext: '0.6.1', expected: false }, // Different major
 ];
 
-console.log('🧪 Version Compatibility Test Results:');
+console.log('Version Compatibility Test Results:');
 console.log('=====================================');
 
 let allPassed = true;
@@ -49,12 +49,12 @@ testCases.forEach((testCase, index) => {
     const passed = result.compatible === testCase.expected;
     allPassed = allPassed && passed;
     
-    const status = passed ? '✅ PASS' : '❌ FAIL';
+    const status = passed ? 'PASS' : 'FAIL';
     console.log(`${index + 1}. ${status} CLI v${testCase.cli} ↔ Extension v${testCase.ext}`);
     console.log(`   Expected: ${testCase.expected ? 'Compatible' : 'Incompatible'}`);
     console.log(`   Result: ${result.reason}`);
     console.log('');
 });
 
-console.log(`Overall: ${allPassed ? '✅ All tests passed!' : '❌ Some tests failed!'}`);
+console.log(`Overall: ${allPassed ? 'All tests passed!' : 'Some tests failed!'}`);
 process.exit(allPassed ? 0 : 1);

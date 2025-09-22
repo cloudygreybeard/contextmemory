@@ -51,7 +51,7 @@ async function main() {
                 showHelp();
         }
     } catch (error) {
-        console.error('❌ Error:', error instanceof Error ? error.message : error);
+        console.error('Error:', error instanceof Error ? error.message : error);
         process.exit(1);
     }
 }
@@ -81,7 +81,7 @@ async function createMemory(args: string[]) {
         labels: Object.keys(labels).length > 0 ? labels : undefined
     });
     
-    console.log('✅ Memory created with AI assistance:');
+    console.log('Memory created with AI assistance:');
     console.log(`   ID: ${memory.id}`);
     console.log(`   Name: ${memory.name} ${name ? '(manual)' : '(AI-suggested)'}`);
     console.log(`   Labels: ${formatLabels(memory.labels)} ${labelsStr ? '(manual)' : '(AI-suggested)'}`);
@@ -105,7 +105,7 @@ async function getMemory(args: string[]) {
     console.log(`   Labels: ${formatLabels(memory.labels)}`);
     console.log(`   Created: ${memory.createdAt}`);
     console.log(`   Updated: ${memory.updatedAt}`);
-    console.log('\n📝 Content:');
+    console.log('\nContent:');
     console.log(memory.content);
 }
 
@@ -135,7 +135,7 @@ async function updateMemory(args: string[]) {
     
     const memory = await memoryService.update(updateRequest);
     
-    console.log('✅ Memory updated:');
+    console.log('Memory updated:');
     console.log(`   ID: ${memory.id}`);
     console.log(`   Name: ${memory.name}`);
     console.log(`   Labels: ${formatLabels(memory.labels)}`);
@@ -149,7 +149,7 @@ async function deleteMemory(args: string[]) {
     }
     
     await memoryService.delete(id);
-    console.log(`✅ Memory deleted: ${id}`);
+    console.log(`Memory deleted: ${id}`);
 }
 
 async function searchMemories(args: string[]) {
@@ -173,7 +173,7 @@ async function searchMemories(args: string[]) {
         limit
     });
     
-    console.log(`🔍 Found ${result.memories.length} of ${result.total} memories:`);
+    console.log(`Found ${result.memories.length} of ${result.total} memories:`);
     result.memories.forEach(memory => {
         console.log(`\n📄 ${memory.name} (${memory.id})`);
         console.log(`   Labels: ${formatLabels(memory.labels)}`);
@@ -195,12 +195,12 @@ async function listMemories() {
 
 async function healthCheck() {
     const isHealthy = await memoryService.health();
-    console.log(`🏥 Storage health: ${isHealthy ? '✅ Healthy' : '❌ Unhealthy'}`);
+    console.log(`Storage health: ${isHealthy ? 'Healthy' : 'Unhealthy'}`);
 }
 
 async function storageInfo() {
     const info = (storage as any).getStorageInfo();
-    console.log('📊 Storage Information:');
+    console.log('Storage Information:');
     console.log(`   Location: ${info.storageDir}`);
     console.log(`   Memories: ${info.memoriesCount}`);
     console.log(`   Size: ${(info.totalSize / 1024).toFixed(1)} KB`);

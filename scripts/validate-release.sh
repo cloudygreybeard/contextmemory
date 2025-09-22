@@ -4,41 +4,41 @@ set -euo pipefail
 # Release Validation Script
 # Comprehensive validation before release
 
-echo "🚀 ContextMemory Release Validation"
+echo "ContextMemory Release Validation"
 echo "=================================="
 echo
 
 # Check prerequisites
-echo "📋 Checking prerequisites..."
-command -v git >/dev/null || { echo "❌ git not found"; exit 1; }
-command -v make >/dev/null || { echo "❌ make not found"; exit 1; }
-command -v go >/dev/null || { echo "❌ go not found"; exit 1; }
-command -v npm >/dev/null || { echo "❌ npm not found"; exit 1; }
-command -v jq >/dev/null || { echo "❌ jq not found"; exit 1; }
-echo "✅ All prerequisites found"
+echo "Checking prerequisites..."
+command -v git >/dev/null || { echo "git not found"; exit 1; }
+command -v make >/dev/null || { echo "make not found"; exit 1; }
+command -v go >/dev/null || { echo "go not found"; exit 1; }
+command -v npm >/dev/null || { echo "npm not found"; exit 1; }
+command -v jq >/dev/null || { echo "jq not found"; exit 1; }
+echo "All prerequisites found"
 echo
 
 # Validate git state
-echo "🔍 Validating git state..."
+echo "Validating git state..."
 if [[ $(git status --porcelain | wc -l) -gt 0 ]]; then
-    echo "⚠️  Uncommitted changes found"
+    echo "WARNING: Uncommitted changes found"
     git status --short
     echo
 else
-    echo "✅ Git working directory clean"
+    echo "Git working directory clean"
 fi
 
 # Get current version
 CURRENT_VERSION=$(jq -r '.version' package.json)
-echo "📦 Current version: $CURRENT_VERSION"
+echo "Current version: $CURRENT_VERSION"
 echo
 
 # Run comprehensive tests
-echo "🧪 Running comprehensive test suite..."
+echo "Running comprehensive test suite..."
 if make test.all; then
-    echo "✅ All tests passed"
+    echo "All tests passed"
 else
-    echo "❌ Tests failed - aborting release"
+    echo "ERROR: Tests failed - aborting release"
     exit 1
 fi
 
@@ -54,9 +54,9 @@ REQUIRED_DOCS=(
 
 for doc in "${REQUIRED_DOCS[@]}"; do
     if [[ -f "$doc" ]]; then
-        echo "  ✅ $doc"
+        echo "  FOUND: $doc"
     else
-        echo "  ❌ $doc missing"
+        echo "  MISSING: $doc"
         exit 1
     fi
 done
@@ -68,9 +68,9 @@ UI_VERSION=$(jq -r '.version' ui/package.json)
 ROOT_VERSION=$(jq -r '.version' package.json)
 
 if [[ "$CLI_VERSION" == "$UI_VERSION" && "$UI_VERSION" == "$ROOT_VERSION" ]]; then
-    echo "✅ Version consistency validated: $CURRENT_VERSION"
+    echo "Version consistency validated: $CURRENT_VERSION"
 else
-    echo "❌ Version mismatch detected:"
+    echo "ERROR: Version mismatch detected:"
     echo "  CLI:  $CLI_VERSION"
     echo "  UI:   $UI_VERSION"
     echo "  Root: $ROOT_VERSION"
@@ -78,33 +78,33 @@ else
 fi
 
 # Validate build artifacts
-echo "🏗️  Validating build artifacts..."
+echo "Validating build artifacts..."
 if [[ -f "cmd/cmctl/cmctl" ]]; then
-    echo "✅ CLI binary present"
+    echo "CLI binary present"
 else
-    echo "❌ CLI binary missing"
+    echo "ERROR: CLI binary missing"
     exit 1
 fi
 
 if [[ -f "ui/contextmemory-$CURRENT_VERSION.vsix" ]]; then
     VSIX_SIZE=$(stat -f%z "ui/contextmemory-$CURRENT_VERSION.vsix" 2>/dev/null || echo "0")
-    echo "✅ Extension package present ($VSIX_SIZE bytes)"
+    echo "Extension package present ($VSIX_SIZE bytes)"
 else
-    echo "❌ Extension package missing"
+    echo "ERROR: Extension package missing"
     exit 1
 fi
 
 # Check changelog
-echo "📝 Checking changelog..."
+echo "Checking changelog..."
 if [[ -f "CHANGELOG.md" ]] && grep -q "$CURRENT_VERSION" CHANGELOG.md; then
-    echo "✅ Changelog updated for $CURRENT_VERSION"
+    echo "Changelog updated for $CURRENT_VERSION"
 else
-    echo "⚠️  Changelog may need updating for $CURRENT_VERSION"
+    echo "WARNING: Changelog may need updating for $CURRENT_VERSION"
 fi
 
 echo
-echo "🎉 Release validation completed successfully!"
-echo "✅ Version $CURRENT_VERSION is ready for release"
+echo "Release validation completed successfully!"
+echo "Version $CURRENT_VERSION is ready for release"
 echo
 echo "Next steps:"
 echo "1. Review changes: git diff --staged"
