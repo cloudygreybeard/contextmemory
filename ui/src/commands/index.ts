@@ -31,7 +31,7 @@ export function registerCommands(
                 
                 if (result.success) {
                     vscode.window.showInformationMessage(
-                        `✅ Chat memory "${result.memoryName}" captured successfully from Cursor AI pane!`
+                        `Chat memory "${result.memoryName}" captured successfully from Cursor AI pane!`
                     );
                     memoryTreeProvider.refresh();
                 } else {
@@ -271,7 +271,7 @@ export function registerCommands(
                     type: 'string'
                 },
                 {
-                    label: '📁 Storage Directory',
+                    label: 'Storage Directory',
                     description: config.storageDir || '~/.contextmemory',
                     detail: 'Directory where memories are stored',
                     configKey: 'storageDir',
