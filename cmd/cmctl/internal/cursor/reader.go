@@ -112,14 +112,28 @@ func (wr *WorkspaceReader) GetChatData(dbPath string) (*ChatData, error) {
 		return nil, err
 	}
 
-	// Try different possible chat data keys
-	chatKeys := []string{
-		"aiService.prompts",
-		"composer.composerData",
-		"workbench.panel.aichat.view.aichat.chatdata",
+	chatData := &ChatData{Tabs: []ChatTab{}}
+	
+	// First, get composer data to extract titles
+	composerTitles := make(map[string]string) // map[composerID]title
+	var composerItem CursorItem
+	if result := db.Where("key = ?", "composer.composerData").First(&composerItem); result.Error == nil {
+		var composerData ComposerData
+		if err := json.Unmarshal([]byte(composerItem.Value), &composerData); err == nil {
+			for _, composer := range composerData.AllComposers {
+				if composer.Name != "" {
+					composerTitles[composer.ComposerID] = composer.Name
+				}
+			}
+		}
 	}
 
-	chatData := &ChatData{Tabs: []ChatTab{}}
+	// Try different possible chat data keys (different Cursor versions)
+	chatKeys := []string{
+		"workbench.panel.aichat.view.aichat.chatdata", // Newer format with actual titles
+		"aiService.prompts",                            // Legacy format
+		"composer.composerData",                        // Composer chats
+	}
 
 	for _, key := range chatKeys {
 		var item CursorItem
@@ -129,8 +143,14 @@ func (wr *WorkspaceReader) GetChatData(dbPath string) (*ChatData, error) {
 		}
 
 		// Parse based on key type
-		if key == "aiService.prompts" {
-			tabs, err := wr.parseAIServicePrompts(item.Value)
+		if key == "workbench.panel.aichat.view.aichat.chatdata" {
+			// Modern Cursor format with proper titles
+			var tempData ChatData
+			if err := json.Unmarshal([]byte(item.Value), &tempData); err == nil {
+				chatData.Tabs = append(chatData.Tabs, tempData.Tabs...)
+			}
+		} else if key == "aiService.prompts" {
+			tabs, err := wr.parseAIServicePromptsWithTitles(item.Value, composerTitles)
 			if err == nil && len(tabs) > 0 {
 				chatData.Tabs = append(chatData.Tabs, tabs...)
 			}
@@ -140,7 +160,7 @@ func (wr *WorkspaceReader) GetChatData(dbPath string) (*ChatData, error) {
 				chatData.Tabs = append(chatData.Tabs, tabs...)
 			}
 		} else {
-			// Original format
+			// Fallback format
 			var tempData ChatData
 			if err := json.Unmarshal([]byte(item.Value), &tempData); err == nil {
 				chatData.Tabs = append(chatData.Tabs, tempData.Tabs...)

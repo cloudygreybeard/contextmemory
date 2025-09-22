@@ -24,6 +24,7 @@ type ComposerData struct {
 type ComposerEntry struct {
 	Type              string    `json:"type"`
 	ComposerID        string    `json:"composerId"`
+	Name              string    `json:"name"` // The actual chat title!
 	CreatedAt         int64     `json:"createdAt"`
 	UnifiedMode       string    `json:"unifiedMode"`
 	ForceMode         string    `json:"forceMode"`
@@ -31,8 +32,47 @@ type ComposerEntry struct {
 	Messages          []Message `json:"messages,omitempty"`
 }
 
-// parseAIServicePrompts converts aiService.prompts data to ChatTab format
+// parseAIServicePromptsWithTitles converts aiService.prompts data to ChatTab format with composer titles
+func (wr *WorkspaceReader) parseAIServicePromptsWithTitles(value string, composerTitles map[string]string) ([]ChatTab, error) {
+	chatTab, err := wr.parseAIServicePromptsToSingleChat(value)
+	if err != nil {
+		return nil, err
+	}
+
+	// Try to match with composer title
+	// If there's only one composer title, use it for this chat
+	if len(composerTitles) == 1 {
+		for _, title := range composerTitles {
+			chatTab.Title = title
+			break
+		}
+	} else if len(composerTitles) > 1 {
+		// Multiple titles available - for now, use the most recently created one
+		// This is a reasonable assumption for the "latest" chat
+		for _, title := range composerTitles {
+			// We could add more sophisticated matching logic here
+			// For now, prefer any non-empty title
+			if chatTab.Title == "AI Service Chat" && title != "" {
+				chatTab.Title = title
+				break
+			}
+		}
+	}
+
+	return []ChatTab{*chatTab}, nil
+}
+
+// parseAIServicePrompts converts aiService.prompts data to ChatTab format (legacy)
 func (wr *WorkspaceReader) parseAIServicePrompts(value string) ([]ChatTab, error) {
+	chatTab, err := wr.parseAIServicePromptsToSingleChat(value)
+	if err != nil {
+		return nil, err
+	}
+	return []ChatTab{*chatTab}, nil
+}
+
+// parseAIServicePromptsToSingleChat is the core logic for parsing aiService.prompts
+func (wr *WorkspaceReader) parseAIServicePromptsToSingleChat(value string) (*ChatTab, error) {
 	// Try to parse as array of prompts
 	var prompts []AIServicePrompt
 	if err := json.Unmarshal([]byte(value), &prompts); err != nil {
@@ -78,7 +118,7 @@ func (wr *WorkspaceReader) parseAIServicePrompts(value string) ([]ChatTab, error
 	}
 
 	// Create a single chat tab from all prompts
-	chatTab := ChatTab{
+	chatTab := &ChatTab{
 		ID:        fmt.Sprintf("ai-service-%d", time.Now().Unix()),
 		Title:     "AI Service Chat",
 		Messages:  messages,
@@ -86,7 +126,7 @@ func (wr *WorkspaceReader) parseAIServicePrompts(value string) ([]ChatTab, error
 		CreatedAt: time.Now(),
 	}
 
-	return []ChatTab{chatTab}, nil
+	return chatTab, nil
 }
 
 // parseComposerData converts composer.composerData to ChatTab format
@@ -102,10 +142,13 @@ func (wr *WorkspaceReader) parseComposerData(value string) ([]ChatTab, error) {
 			continue // Skip non-head composers for now
 		}
 
-		// Generate title from composer info
-		title := "Composer Chat"
-		if composer.UnifiedMode != "" {
-			title = fmt.Sprintf("%s Chat", strings.Title(composer.UnifiedMode))
+		// Use the actual chat name if available, otherwise generate from composer info
+		title := composer.Name
+		if title == "" {
+			title = "Composer Chat"
+			if composer.UnifiedMode != "" {
+				title = fmt.Sprintf("%s Chat", strings.Title(composer.UnifiedMode))
+			}
 		}
 
 		chatTab := ChatTab{

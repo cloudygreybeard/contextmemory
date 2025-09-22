@@ -168,7 +168,7 @@ install.ui:
 	@if [ -d ui ] && [ -f ui/package.json ]; then \
 		cd ui && \
 		if [ -f *.vsix ]; then \
-			cursor --install-extension *.vsix && echo "[SUCCESS] Extension installed"; \
+			cursor --install-extension *.vsix --force && echo "[SUCCESS] Extension installed/updated"; \
 		else \
 			echo "[INFO] No .vsix package found - run 'make package' first"; \
 		fi; \

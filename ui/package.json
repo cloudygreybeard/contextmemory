@@ -2,7 +2,7 @@
   "name": "contextmemory",
   "displayName": "ContextMemory",
   "description": "Clean, simple, file-based memory management for LLM development workflows",
-  "version": "0.6.1",
+  "version": "0.6.3",
   "publisher": "cloudygreybeard",
   "license": "Apache-2.0",
   "repository": {

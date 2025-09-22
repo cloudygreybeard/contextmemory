@@ -13,47 +13,46 @@ export function registerCommands(
 ) {
 
 
-    // Create Memory from Chat command - Enhanced for Cursor chat detection
+    // Create Memory from Chat command - Direct Cursor AI Pane integration
     const createMemoryFromChat = vscode.commands.registerCommand('contextmemory.createMemoryFromChat', async () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            vscode.window.showWarningMessage('Please open a markdown file containing chat content first');
-            return;
-        }
-
-        const content = editor.document.getText();
-        const fileName = editor.document.fileName;
-
-        // Enhanced chat detection and validation
-        if (!isChatContent(content)) {
-            const proceed = await vscode.window.showWarningMessage(
-                'This doesn\'t appear to be chat content. Continue anyway?',
-                'Yes, Continue',
-                'Cancel'
-            );
-            if (proceed !== 'Yes, Continue') {
-                return;
-            }
-        }
-
         try {
-            // Extract chat metadata for better labeling
-            const chatMetadata = extractChatMetadata(content);
-            const defaultLabels = {
-                type: 'chat',
-                source: 'cursor-export',
-                ...chatMetadata
-            };
-
-            const memory = await promptForChatMemoryCreation(content, defaultLabels);
-
-            if (memory) {
-                const createdMemory = await cmctlService.createMemory(memory);
-                vscode.window.showInformationMessage(`Chat memory "${createdMemory.name}" captured successfully`);
-                memoryTreeProvider.refresh();
-            }
+            // Show progress indicator
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: "Capturing Cursor chat...",
+                cancellable: false
+            }, async (progress) => {
+                progress.report({ increment: 20, message: "Accessing Cursor AI pane data..." });
+                
+                // Use the CLI command to import the latest chat directly from Cursor
+                const result = await cmctlService.importCursorChat();
+                
+                progress.report({ increment: 80, message: "Creating memory..." });
+                
+                if (result.success) {
+                    vscode.window.showInformationMessage(
+                        `✅ Chat memory "${result.memoryName}" captured successfully from Cursor AI pane!`
+                    );
+                    memoryTreeProvider.refresh();
+                } else {
+                    throw new Error(result.error || 'Failed to import chat');
+                }
+            });
         } catch (error: any) {
-            vscode.window.showErrorMessage(`Failed to capture chat memory: ${error.message}`);
+            vscode.window.showErrorMessage(`Failed to capture chat from Cursor: ${error.message}`);
+            
+            // Provide helpful guidance
+            const action = await vscode.window.showWarningMessage(
+                'Could not access Cursor AI pane data. Make sure you have an active chat conversation.',
+                'Try Again',
+                'Open Troubleshooting'
+            );
+            
+            if (action === 'Try Again') {
+                vscode.commands.executeCommand('contextmemory.createMemoryFromChat');
+            } else if (action === 'Open Troubleshooting') {
+                vscode.env.openExternal(vscode.Uri.parse('https://github.com/cloudygreybeard/contextmemory/docs/troubleshooting.md'));
+            }
         }
     });
 

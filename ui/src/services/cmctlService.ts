@@ -11,7 +11,7 @@ const execAsync = promisify(cp.exec);
 export class CMCtlService implements vscode.Disposable {
     private config: CMCtlConfig;
     private outputChannel: vscode.OutputChannel;
-    private static readonly EXTENSION_VERSION = '0.6.1';
+    private static readonly EXTENSION_VERSION = '0.6.3';
 
     constructor() {
         this.outputChannel = vscode.window.createOutputChannel('ContextMemory');
@@ -257,12 +257,7 @@ export class CMCtlService implements vscode.Disposable {
      * List all memories using the unified get command
      */
     async listMemories(): Promise<Memory[]> {
-        const args: string[] = [];
-        
-        // Add --show-id flag if configured
-        if (this.config.showMemoryIds) {
-            args.push('--show-id');
-        }
+        const args: string[] = ['-o', 'json'];
         
         const command = this.buildCommand('get', args);
         const output = await this.executeCommand(command);
@@ -271,66 +266,28 @@ export class CMCtlService implements vscode.Disposable {
             return [];
         }
         
-        const lines = output.split('\n').slice(1); // Skip header
-        const memories: Memory[] = [];
-        
-        for (const line of lines) {
-            if (line.trim()) {
-                // Parse table format based on whether IDs are shown
-                const parts = line.split(/\s{2,}/); // Split on multiple spaces
-                
-                if (this.config.showMemoryIds && parts.length >= 3) {
-                    // Format: ID    NAME    LABELS    AGE
-                    const id = parts[0].trim();
-                    const name = parts[1].trim();
-                    const labelsStr = parts[2].trim();
-                    
-                    const labels: Record<string, string> = {};
-                    if (labelsStr && labelsStr !== '-') {
-                        labelsStr.split(',').forEach(labelPair => {
-                            const [key, value] = labelPair.split('=');
-                            if (key && value) {
-                                labels[key.trim()] = value.trim();
-                            }
-                        });
-                    }
-                    
+        try {
+            const parsed = JSON.parse(output);
+            const memories: Memory[] = [];
+            
+            if (parsed.items) {
+                for (const item of parsed.items) {
                     memories.push({
-                        id,
-                        name,
-                        content: '', // Would need separate get call for full content
-                        labels,
-                        created: '',
-                        updated: ''
-                    });
-                } else if (!this.config.showMemoryIds && parts.length >= 2) {
-                    // Format: NAME    LABELS    AGE
-                    const name = parts[0].trim();
-                    const labelsStr = parts[1].trim();
-                    
-                    const labels: Record<string, string> = {};
-                    if (labelsStr && labelsStr !== '-') {
-                        labelsStr.split(',').forEach(labelPair => {
-                            const [key, value] = labelPair.split('=');
-                            if (key && value) {
-                                labels[key.trim()] = value.trim();
-                            }
-                        });
-                    }
-                    
-                    memories.push({
-                        id: name.toLowerCase().replace(/\s+/g, '_'), // Generate ID from name for now
-                        name,
-                        content: '', // Would need separate get call for full content
-                        labels,
-                        created: '',
-                        updated: ''
+                        id: item.id,
+                        name: item.name,
+                        content: item.content || '',
+                        labels: item.labels || {},
+                        created: item.createdAt || '',
+                        updated: item.updatedAt || ''
                     });
                 }
             }
+            
+            return memories;
+        } catch (error) {
+            console.error('Failed to parse JSON output from cmctl get:', error);
+            return [];
         }
-        
-        return memories;
     }
 
     /**
@@ -465,6 +422,37 @@ export class CMCtlService implements vscode.Disposable {
             await config.update(key, value, vscode.ConfigurationTarget.Global);
         }
         this.config = this.loadConfig(); // Reload config
+    }
+
+    /**
+     * Import chat from Cursor AI pane
+     */
+    async importCursorChat(): Promise<{ success: boolean; memoryName?: string; error?: string }> {
+        try {
+            const command = this.buildCommand('import-cursor-chat', ['--latest']);
+            const output = await this.executeCommand(command);
+            
+            // Parse the output to extract memory name and ID
+            // Expected format: "Successfully imported chat as memory:\nID: mem_xxx\nName: Chat Name"
+            const nameMatch = output.match(/Name:\s*(.+)/);
+            const idMatch = output.match(/ID:\s*(mem_[a-f0-9_]+)/);
+            
+            if (output.includes('Successfully imported chat as memory')) {
+                const memoryName = nameMatch ? nameMatch[1].trim() : 'Cursor Chat';
+                
+                return {
+                    success: true,
+                    memoryName: memoryName
+                };
+            } else {
+                throw new Error('Unexpected output format from import command');
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.message || 'Failed to import cursor chat'
+            };
+        }
     }
 
     /**

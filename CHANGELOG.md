@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2025-09-22
+
+### Fixed
+- Chat title extraction now preserves actual user-set titles from Cursor AI pane
+- Improved correlation between composer data and aiService prompts for accurate title matching
+- Title preservation is now verbatim without unwanted capitalization changes
+
+### Changed
+- Enhanced parseAIServicePromptsWithTitles function to use composer title mapping
+- Updated GetChatData to pre-extract composer titles for correlation
+
+## [0.6.2] - 2025-09-22
+
+### Fixed
+- Fixed Cursor chat capture in VS Code extension to directly access AI pane data
+- Extension no longer requires markdown file to be open for chat capture
+- Added proper progress indicators and error handling for chat import
+
+### Enhanced
+- Improved user experience with better error messages and retry options
+- Added direct integration with `cmctl import-cursor-chat` command
+
 ## [0.6.1] - 2025-09-22
 
 ### Added

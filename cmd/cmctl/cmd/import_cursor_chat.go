@@ -163,8 +163,33 @@ func convertChatToMemory(chatTab *cursor.ChatTab) storage.CreateMemoryRequest {
 func generateChatMemoryName(chatTab *cursor.ChatTab) string {
 	// Try to extract topic from title or first message
 	title := chatTab.GetDisplayTitle()
-	if title != "Untitled Chat" && len(title) > 0 {
+	if title != "Untitled Chat" && title != "AI Service Chat" && len(title) > 0 {
 		return cleanChatTitle(title)
+	}
+
+	// Generate from first meaningful user message
+	for _, msg := range chatTab.Messages {
+		if msg.Role == "user" && len(strings.TrimSpace(msg.Content)) > 0 {
+			content := strings.TrimSpace(msg.Content)
+
+			// Skip file references and common prefixes
+			if strings.HasPrefix(content, "@") {
+				continue
+			}
+
+			// Extract meaningful title from first sentence
+			sentences := strings.Split(content, ".")
+			if len(sentences) > 0 {
+				firstSentence := strings.TrimSpace(sentences[0])
+				if len(firstSentence) > 10 {
+					// Limit length and clean up
+					if len(firstSentence) > 60 {
+						firstSentence = firstSentence[:57] + "..."
+					}
+					return strings.Title(strings.ToLower(firstSentence))
+				}
+			}
+		}
 	}
 
 	// Analyze technical concepts
@@ -240,10 +265,7 @@ func cleanChatTitle(title string) string {
 	title = strings.TrimPrefix(title, "Chat: ")
 	title = strings.TrimPrefix(title, "Discussion: ")
 
-	// Capitalize first letter
-	if len(title) > 0 {
-		title = strings.ToUpper(string(title[0])) + title[1:]
-	}
+	// Keep title verbatim - no capitalization changes
 
 	return title
 }

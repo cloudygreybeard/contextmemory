@@ -1,6 +1,6 @@
 {
   "name": "contextmemory",
-  "version": "0.6.1",
+  "version": "0.6.3",
   "description": "Clean, simple, file-based memory management for LLM development workflows",
   "main": "dist/core/memory.js",
   "bin": {

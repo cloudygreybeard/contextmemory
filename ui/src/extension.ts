@@ -7,7 +7,7 @@ import { registerCommands } from './commands';
  * Extension activation function
  */
 export async function activate(context: vscode.ExtensionContext) {
-    console.log('ContextMemory v0.6.1 extension is now active!');
+    console.log('ContextMemory v0.6.3 extension is now active!');
 
     // Initialize services
     const cmctlService = new CMCtlService();
@@ -79,7 +79,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const hasShownWelcome = context.globalState.get('contextmemory.hasShownWelcome', false);
     if (!hasShownWelcome) {
         vscode.window.showInformationMessage(
-            'Welcome to ContextMemory v0.6.1! Transform your coding conversations into searchable memories.',
+            'Welcome to ContextMemory v0.6.3! Transform your coding conversations into searchable memories.',
             'Get Started',
             'View Documentation'
         ).then(selection => {
