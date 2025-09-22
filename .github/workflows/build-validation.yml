@@ -39,6 +39,9 @@ jobs:
       - name: Full build
         run: make build
 
+      - name: Package extension
+        run: make package.ui
+
       - name: Verify CLI version
         run: |
           ./cmd/cmctl/cmctl --version
