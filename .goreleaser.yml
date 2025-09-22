@@ -5,15 +5,16 @@ gomod:
 
 before:
   hooks:
-    - go mod tidy
-    - go generate ./...
+    - bash -c "cd cmd/cmctl && go mod tidy"
+    - bash -c "cd cmd/cmctl && go generate ./..."
     - make build.ui
     - make package.ui
 
 builds:
   # Standard CLI builds for multiple platforms
   - id: cmctl
-    main: ./cmd/cmctl
+    dir: ./cmd/cmctl
+    main: .
     binary: cmctl
     env:
       - CGO_ENABLED=0
@@ -35,7 +36,8 @@ builds:
 
   # WebAssembly build for VS Code extension embedding
   - id: cmctl-wasm
-    main: ./cmd/cmctl
+    dir: ./cmd/cmctl
+    main: .
     binary: cmctl
     env:
       - CGO_ENABLED=0
