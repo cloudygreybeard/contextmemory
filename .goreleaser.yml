@@ -4,6 +4,8 @@ before:
   hooks:
     - go mod tidy
     - go generate ./...
+    - make build.ui
+    - make package.ui
 
 builds:
   # Standard CLI builds for multiple platforms
@@ -127,10 +129,3 @@ release:
     ### WebAssembly Integration
     The WebAssembly build is automatically included in the VS Code extension for embedded functionality.
 
-# Custom hooks for extension building
-after:
-  hooks:
-    - cmd: make build.ui
-      dir: ./
-    - cmd: make package.ui
-      dir: ./
