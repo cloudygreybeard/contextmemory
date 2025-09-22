@@ -44,15 +44,15 @@ cmctl search --query "React hooks" --labels "type=chat"
 cmctl get --labels "lang=python,type=chat"         # Filter by language/type
 ```
 
-### **Traditional Memory Management**
+### **Manual Memory Creation**
 
 ```bash
-# Manual memory creation
+# cmctl takes markdown-formatted docs on standard input
 echo "Meeting notes..." | cmctl create --name "Sprint Planning" --labels "type=meeting,team=eng"
 cmctl create --name "Code Review" --file "./notes.md" --labels "type=review,lang=go"
 
 # Memory operations
-cmctl get                          # List all memories
+cmctl get                         # List all memories
 cmctl search --query "auth"       # Search across all memories
 cmctl get <memory-id>             # View specific memory
 cmctl delete <memory-id>          # Delete memory
@@ -74,7 +74,7 @@ contextmemory/
 ├── core/              # Core memory operations (TypeScript)
 ├── storage/           # File-based storage backend (TypeScript)  
 ├── ui/                # VS Code extension (TypeScript)
-├── Makefile          # Development automation
+├── Makefile           # Development automation
 └── README.md
 ```
 
@@ -119,7 +119,7 @@ cmctl search --query "error" --labels "type=chat,lang=python"   # Filter by cont
 cmctl get --labels "type=chat"                            # Show all captured chats
 ```
 
-### **Traditional Memory Operations**
+### **Manual Memory Operations**
 
 ```bash
 # Manual memory creation
