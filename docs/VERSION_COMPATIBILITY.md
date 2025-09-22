@@ -10,7 +10,7 @@ ContextMemory follows a **Minor Version Compatibility** policy to ensure reliabl
 
 | Extension Version | Compatible CLI Versions | Incompatible CLI Versions |
 |------------------|------------------------|--------------------------|
-| v0.6.1          | v0.6.0, v0.6.1, v0.6.2, v0.6.10 | v0.5.x, v0.7.x, v1.x.x |
+| v0.6.3          | v0.6.0, v0.6.1, v0.6.2, v0.6.3, v0.6.10 | v0.5.x, v0.7.x, v1.x.x |
 | v0.7.0          | v0.7.0, v0.7.1, v0.7.5 | v0.6.x, v0.8.x, v1.x.x |
 | v1.0.0          | v1.0.0, v1.0.1, v1.0.9 | v0.x.x, v1.1.x, v2.x.x |
 

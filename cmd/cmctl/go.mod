@@ -1,6 +1,6 @@
 module github.com/cloudygreybeard/contextmemory/cmd/cmctl
 
-go 1.24.6
+go 1.24
 
 require (
 	github.com/glebarez/sqlite v1.11.0

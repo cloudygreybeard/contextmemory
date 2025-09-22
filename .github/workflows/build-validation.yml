@@ -16,13 +16,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.24'
           cache-dependency-path: cmd/cmctl/go.sum
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: |
             package-lock.json
@@ -39,6 +39,9 @@ jobs:
       - name: Full build
         run: make build
 
+      - name: Package extension
+        run: make package.ui
+
       - name: Verify CLI version
         run: |
           ./cmd/cmctl/cmctl --version
@@ -51,6 +54,11 @@ jobs:
 
       - name: Run integration tests
         run: make test.integration
+        if: runner.os != 'Windows'
+
+      - name: Skip integration tests on Windows  
+        run: echo "Integration tests skipped on Windows (requires bash)"
+        if: runner.os == 'Windows'
 
       - name: Validate release readiness
         run: |
