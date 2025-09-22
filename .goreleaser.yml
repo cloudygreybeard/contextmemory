@@ -6,8 +6,10 @@ before:
       dir: ./cmd/cmctl
     - cmd: go generate ./...
       dir: ./cmd/cmctl
-    - make build.ui
-    - make package.ui
+    - cmd: make build.ui
+      dir: ./
+    - cmd: make package.ui
+      dir: ./
 
 builds:
   # Standard CLI builds for multiple platforms
