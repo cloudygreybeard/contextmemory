@@ -230,7 +230,10 @@ func showChatSelection(fs *storage.FileStorage, memories []storage.Memory) error
 
 	fmt.Printf("Enter the number of the chat to reload (1-%d), or 0 to cancel: ", len(memories))
 	var choice string
-	fmt.Scanln(&choice)
+	if _, err := fmt.Scanln(&choice); err != nil {
+		fmt.Println("Invalid input. Cancelled.")
+		return nil
+	}
 
 	choiceNum, err := strconv.Atoi(choice)
 	if err != nil || choiceNum < 0 || choiceNum > len(memories) {
