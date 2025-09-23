@@ -359,7 +359,7 @@ func (fs *FileStorage) listFromIndex(includeContent bool) ([]Memory, error) {
 	}
 
 	memories := make([]Memory, 0, len(index.Memories))
-	
+
 	if !includeContent {
 		// Fast metadata-only listing
 		for _, entry := range index.Memories {
