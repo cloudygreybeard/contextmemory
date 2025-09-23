@@ -14,8 +14,13 @@ var getCmd = &cobra.Command{
 	Long: `Retrieve and display memories. Without arguments, lists all memories.
 With a memory ID, retrieves a specific memory.
 
+Performance Options:
+  --include-content=false   Fast metadata-only listing (names, labels, timestamps)
+  --no-index               Force file-based loading (slower but more robust)
+
 Examples:
   cmctl get                                     # List all memories
+  cmctl get --include-content=false             # Fast metadata-only listing
   cmctl get --show-id                           # List all memories with IDs
   cmctl get --labels "type=test"                # List memories with specific labels
   cmctl get -o json                             # List all memories as JSON
@@ -27,9 +32,11 @@ Examples:
 }
 
 var (
-	getOutputFlag string
-	getShowID     bool
-	getLabels     string
+	getOutputFlag     string
+	getShowID         bool
+	getLabels         string
+	getIncludeContent bool
+	getNoIndex        bool
 )
 
 func init() {
@@ -38,6 +45,8 @@ func init() {
 	getCmd.Flags().StringVarP(&getOutputFlag, "output", "o", "", "Output format: table|json|yaml|jsonpath=<template>|go-template=<template>")
 	getCmd.Flags().BoolVar(&getShowID, "show-id", false, "Show memory IDs when listing memories")
 	getCmd.Flags().StringVarP(&getLabels, "labels", "l", "", "Label selector for filtering (format: key1=value1,key2=value2)")
+	getCmd.Flags().BoolVar(&getIncludeContent, "include-content", true, "Include full memory content (disable for faster metadata-only listing)")
+	getCmd.Flags().BoolVar(&getNoIndex, "no-index", false, "Disable index-based optimizations (force file-based loading)")
 }
 
 func runGet(cmd *cobra.Command, args []string) error {
@@ -76,8 +85,10 @@ func runGetList(fs *storage.FileStorage, outputOpts OutputOptions) error {
 		}
 
 		searchReq := storage.SearchRequest{
-			LabelSelector: labelSelector,
-			Limit:         -1, // No limit for get command
+			LabelSelector:  labelSelector,
+			Limit:          -1, // No limit for get command
+			UseIndex:       !getNoIndex,
+			IncludeContent: getIncludeContent,
 		}
 		searchRes, err := fs.Search(searchReq)
 		if err != nil {
@@ -85,8 +96,12 @@ func runGetList(fs *storage.FileStorage, outputOpts OutputOptions) error {
 		}
 		memories = searchRes.Memories
 	} else {
-		// List all memories
-		memories, err = fs.List()
+		// List all memories with performance options
+		listOpts := storage.ListOptions{
+			IncludeContent: getIncludeContent,
+			UseIndex:       !getNoIndex,
+		}
+		memories, err = fs.ListWithOptions(listOpts)
 		if err != nil {
 			return fmt.Errorf("failed to list memories: %w", err)
 		}

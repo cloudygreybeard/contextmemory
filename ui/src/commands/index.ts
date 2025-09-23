@@ -13,6 +13,77 @@ export function registerCommands(
 ) {
 
 
+    // Reload Chat Memory command - Load previously captured chats as context
+    const reloadChatMemory = vscode.commands.registerCommand('contextmemory.reloadChatMemory', async () => {
+        try {
+            // Search for chat memories
+            const chatMemories = await cmctlService.searchMemories({
+                labels: { type: 'chat' },
+                limit: 50
+            });
+
+            if (chatMemories.memories.length === 0) {
+                vscode.window.showInformationMessage(
+                    'No chat memories found. Import some chats first using "Capture Current Chat".'
+                );
+                return;
+            }
+
+            // Create quick pick items
+            const items = chatMemories.memories.map(memory => ({
+                label: memory.name,
+                description: `${memory.created} | ${memory.labels.language || 'No language'} | ${memory.labels.activity || 'General'}`,
+                detail: extractChatPreview(memory),
+                memory: memory
+            }));
+
+            // Show quick pick
+            const selectedItem = await vscode.window.showQuickPick(items, {
+                placeHolder: 'Select a chat memory to reload as context',
+                matchOnDescription: true,
+                matchOnDetail: true
+            });
+
+            if (!selectedItem) {
+                return;
+            }
+
+            // Get format preference
+            const formatOptions = [
+                { label: 'Conversational', value: 'conversational', description: 'Full chat with user/assistant labels' },
+                { label: 'Context Only', value: 'context-only', description: 'Clean context without chat formatting' },
+                { label: 'Summary', value: 'summary', description: 'Condensed version with key points' },
+                { label: 'Raw Markdown', value: 'raw', description: 'Original markdown format' }
+            ];
+
+            const formatChoice = await vscode.window.showQuickPick(formatOptions, {
+                placeHolder: 'Choose output format'
+            });
+
+            if (!formatChoice) {
+                return;
+            }
+
+            // Use CLI to format the chat
+            const formattedChat = await cmctlService.reloadChat(selectedItem.memory.id, formatChoice.value);
+            
+            // Create new document with formatted chat
+            const doc = await vscode.workspace.openTextDocument({
+                content: formattedChat,
+                language: 'markdown'
+            });
+            
+            await vscode.window.showTextDocument(doc);
+            
+            vscode.window.showInformationMessage(
+                `Chat memory "${selectedItem.memory.name}" loaded! Copy the content to your AI conversation.`
+            );
+
+        } catch (error: any) {
+            vscode.window.showErrorMessage(`Failed to reload chat memory: ${error.message}`);
+        }
+    });
+
     // Create Memory from Chat command - Direct Cursor AI Pane integration
     const createMemoryFromChat = vscode.commands.registerCommand('contextmemory.createMemoryFromChat', async () => {
         try {
@@ -333,11 +404,39 @@ export function registerCommands(
 
     // Add essential commands to subscriptions - focused on chat capture
     context.subscriptions.push(
+        reloadChatMemory,
         createMemoryFromChat,
         refreshMemories,
         openMemory,
         health
     );
+}
+
+/**
+ * Extract a preview from chat memory content
+ */
+function extractChatPreview(memory: any): string {
+    if (!memory.content) {
+        return 'No content available';
+    }
+    
+    const lines = memory.content.split('\n');
+    for (const line of lines) {
+        if (line.startsWith('**User**: ')) {
+            const userContent = line.replace('**User**: ', '');
+            return userContent.length > 100 ? userContent.substring(0, 97) + '...' : userContent;
+        }
+    }
+    
+    // Fallback to first meaningful line
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('**Date**:')) {
+            return trimmed.length > 100 ? trimmed.substring(0, 97) + '...' : trimmed;
+        }
+    }
+    
+    return 'No preview available';
 }
 
 /**

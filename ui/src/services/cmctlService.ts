@@ -456,6 +456,16 @@ export class CMCtlService implements vscode.Disposable {
     }
 
     /**
+     * Reload a chat memory with specified format
+     */
+    async reloadChat(memoryId: string, format: string = 'conversational'): Promise<string> {
+        const args: string[] = ['reload-chat', memoryId, '--format', format];
+        
+        const command = this.buildCommand('cmctl', args);
+        return await this.executeCommand(command);
+    }
+
+    /**
      * Show output channel for debugging
      */
     showOutputChannel(): void {

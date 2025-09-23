@@ -32,6 +32,12 @@ type UpdateMemoryRequest struct {
 	Metadata map[string]any    `json:"metadata,omitempty"`
 }
 
+// ListOptions controls how memories are loaded during list operations
+type ListOptions struct {
+	IncludeContent bool `json:"includeContent,omitempty"`
+	UseIndex       bool `json:"useIndex,omitempty"`
+}
+
 // SearchRequest represents a search query for memories
 type SearchRequest struct {
 	Query         string            `json:"query,omitempty"`
@@ -39,6 +45,9 @@ type SearchRequest struct {
 	Limit         int               `json:"limit,omitempty"`
 	SortBy        string            `json:"sortBy,omitempty"`
 	SortOrder     string            `json:"sortOrder,omitempty"`
+	// Performance options
+	UseIndex       bool `json:"useIndex,omitempty"`
+	IncludeContent bool `json:"includeContent,omitempty"`
 }
 
 // SearchResponse represents the result of a search operation
