@@ -113,9 +113,9 @@ func reloadSpecificChat(fs *storage.FileStorage, memoryID string) error {
 func runSearchAndReload(fs *storage.FileStorage) error {
 	// Build search criteria
 	req := storage.SearchRequest{
-		LabelSelector: map[string]string{"type": "chat"},
-		Limit:         reloadLimit,
-		UseIndex:      true,
+		LabelSelector:  map[string]string{"type": "chat"},
+		Limit:          reloadLimit,
+		UseIndex:       true,
 		IncludeContent: false, // We'll load content only for matches
 	}
 
@@ -178,9 +178,9 @@ func runSearchAndReload(fs *storage.FileStorage) error {
 func runInteractiveReload(fs *storage.FileStorage) error {
 	// Get all chat memories
 	req := storage.SearchRequest{
-		LabelSelector: map[string]string{"type": "chat"},
-		Limit:         100, // Show more for interactive mode
-		UseIndex:      true,
+		LabelSelector:  map[string]string{"type": "chat"},
+		Limit:          100, // Show more for interactive mode
+		UseIndex:       true,
 		IncludeContent: false,
 	}
 
@@ -211,7 +211,7 @@ func showChatSelection(fs *storage.FileStorage, memories []storage.Memory) error
 	for i, memory := range memories {
 		fmt.Printf("%d. %s\n", i+1, memory.Name)
 		fmt.Printf("   Date: %s", memory.CreatedAt.Format("2006-01-02 15:04"))
-		
+
 		if lang := memory.Labels["language"]; lang != "" {
 			fmt.Printf(" | Language: %s", lang)
 		}
@@ -219,7 +219,7 @@ func showChatSelection(fs *storage.FileStorage, memories []storage.Memory) error
 			fmt.Printf(" | Activity: %s", activity)
 		}
 		fmt.Printf("\n")
-		
+
 		if len(memory.Content) > 0 {
 			// Show preview if we have content
 			preview := extractContentPreview(memory.Content, 100)
@@ -230,7 +230,10 @@ func showChatSelection(fs *storage.FileStorage, memories []storage.Memory) error
 
 	fmt.Printf("Enter the number of the chat to reload (1-%d), or 0 to cancel: ", len(memories))
 	var choice string
-	fmt.Scanln(&choice)
+	if _, err := fmt.Scanln(&choice); err != nil {
+		fmt.Println("Invalid input. Cancelled.")
+		return nil
+	}
 
 	choiceNum, err := strconv.Atoi(choice)
 	if err != nil || choiceNum < 0 || choiceNum > len(memories) {
@@ -244,7 +247,7 @@ func showChatSelection(fs *storage.FileStorage, memories []storage.Memory) error
 	}
 
 	selectedMemory := memories[choiceNum-1]
-	
+
 	// Load full content if needed
 	if selectedMemory.Content == "" {
 		fullMemory, err := fs.Get(selectedMemory.ID)
@@ -276,62 +279,62 @@ func formatChatForReload(memory storage.Memory, format string) string {
 
 func formatAsConversational(memory storage.Memory) string {
 	var output strings.Builder
-	
+
 	output.WriteString(fmt.Sprintf("# Previous Conversation: %s\n\n", memory.Name))
 	output.WriteString(fmt.Sprintf("*Captured on %s*\n\n", memory.CreatedAt.Format("2006-01-02 15:04")))
-	
+
 	if lang := memory.Labels["language"]; lang != "" {
 		output.WriteString(fmt.Sprintf("*Language/Technology: %s*\n", lang))
 	}
 	if activity := memory.Labels["activity"]; activity != "" {
 		output.WriteString(fmt.Sprintf("*Activity: %s*\n", activity))
 	}
-	
+
 	output.WriteString("\n---\n\n")
 	output.WriteString(memory.Content)
 	output.WriteString("\n\n---\n\n")
 	output.WriteString("*Please continue this conversation or use the above context for reference.*\n")
-	
+
 	return output.String()
 }
 
 func formatAsContext(memory storage.Memory) string {
 	// Strip out the conversational markers and just provide clean context
 	content := memory.Content
-	
+
 	// Remove markdown headers
 	lines := strings.Split(content, "\n")
 	var cleanLines []string
-	
+
 	for _, line := range lines {
 		// Skip markdown headers and date lines
 		if strings.HasPrefix(line, "#") || strings.HasPrefix(line, "**Date**:") {
 			continue
 		}
-		
+
 		// Convert user/assistant markers to simple context
 		if strings.HasPrefix(line, "**User**: ") {
 			line = "Question: " + strings.TrimPrefix(line, "**User**: ")
 		} else if strings.HasPrefix(line, "**Assistant**: ") {
 			line = "Response: " + strings.TrimPrefix(line, "**Assistant**: ")
 		}
-		
+
 		cleanLines = append(cleanLines, line)
 	}
-	
+
 	var output strings.Builder
 	output.WriteString(fmt.Sprintf("Context from previous session (%s):\n\n", memory.CreatedAt.Format("2006-01-02")))
 	output.WriteString(strings.Join(cleanLines, "\n"))
-	
+
 	return output.String()
 }
 
 func formatAsSummary(memory storage.Memory) string {
 	var output strings.Builder
-	
+
 	output.WriteString(fmt.Sprintf("## Summary: %s\n\n", memory.Name))
 	output.WriteString(fmt.Sprintf("*Session from %s*\n\n", memory.CreatedAt.Format("2006-01-02")))
-	
+
 	// Extract key topics and concepts
 	if techs := memory.Labels["technologies"]; techs != "" {
 		output.WriteString(fmt.Sprintf("**Technologies discussed**: %s\n", techs))
@@ -342,13 +345,13 @@ func formatAsSummary(memory storage.Memory) string {
 	if activity := memory.Labels["activity"]; activity != "" {
 		output.WriteString(fmt.Sprintf("**Activity type**: %s\n", activity))
 	}
-	
+
 	output.WriteString("\n**Key points from conversation**:\n")
-	
+
 	// Extract key exchanges (simplified)
 	content := memory.Content
 	lines := strings.Split(content, "\n")
-	
+
 	for _, line := range lines {
 		if strings.HasPrefix(line, "**User**: ") {
 			userQ := strings.TrimPrefix(line, "**User**: ")
@@ -358,16 +361,16 @@ func formatAsSummary(memory storage.Memory) string {
 			output.WriteString(fmt.Sprintf("- Asked about: %s\n", userQ))
 		}
 	}
-	
+
 	output.WriteString(fmt.Sprintf("\n*Full conversation available in memory: %s*\n", memory.ID))
-	
+
 	return output.String()
 }
 
 func extractContentPreview(content string, maxLength int) string {
 	// Extract a meaningful preview from the chat content
 	lines := strings.Split(content, "\n")
-	
+
 	for _, line := range lines {
 		if strings.HasPrefix(line, "**User**: ") {
 			userContent := strings.TrimPrefix(line, "**User**: ")
@@ -377,7 +380,7 @@ func extractContentPreview(content string, maxLength int) string {
 			return userContent
 		}
 	}
-	
+
 	// Fallback to first non-empty line
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -388,14 +391,14 @@ func extractContentPreview(content string, maxLength int) string {
 			return line
 		}
 	}
-	
+
 	return "No preview available"
 }
 
 func parseDateFilter(dateStr string) (string, error) {
 	// Handle relative dates
 	now := time.Now()
-	
+
 	switch strings.ToLower(dateStr) {
 	case "today":
 		return now.Format("2006-01-02"), nil
@@ -404,11 +407,11 @@ func parseDateFilter(dateStr string) (string, error) {
 	case "week":
 		return now.AddDate(0, 0, -7).Format("2006-01-02"), nil
 	}
-	
+
 	// Try to parse as exact date
 	if _, err := time.Parse("2006-01-02", dateStr); err != nil {
 		return "", fmt.Errorf("invalid date format, use YYYY-MM-DD or 'today', 'yesterday', 'week'")
 	}
-	
+
 	return dateStr, nil
 }
