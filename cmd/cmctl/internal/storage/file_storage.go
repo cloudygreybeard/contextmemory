@@ -230,6 +230,73 @@ func (fs *FileStorage) Delete(id string) error {
 
 // Search searches for memories based on the given criteria
 func (fs *FileStorage) Search(req SearchRequest) (*SearchResponse, error) {
+	// Set defaults for performance options
+	if !req.UseIndex && req.Query == "" {
+		req.UseIndex = true // Use index for label-only searches
+	}
+	if req.Query != "" {
+		req.IncludeContent = true // Need content for text search
+	}
+
+	if req.UseIndex && req.Query == "" {
+		return fs.searchFromIndex(req)
+	}
+
+	// Fallback to traditional search for text queries
+	return fs.searchFromMemories(req)
+}
+
+// searchFromIndex performs fast index-based search for label queries
+func (fs *FileStorage) searchFromIndex(req SearchRequest) (*SearchResponse, error) {
+	index, err := fs.readIndex()
+	if err != nil {
+		// Fallback to memory-based search
+		return fs.searchFromMemories(req)
+	}
+
+	var filtered []IndexEntry
+	for _, entry := range index.Memories {
+		if fs.matchesIndexEntry(entry, req) {
+			filtered = append(filtered, entry)
+		}
+	}
+
+	// Apply limit to index entries first
+	if req.Limit > 0 && len(filtered) > req.Limit {
+		filtered = filtered[:req.Limit]
+	}
+
+	// Convert to Memory objects
+	memories := make([]Memory, 0, len(filtered))
+	for _, entry := range filtered {
+		if req.IncludeContent {
+			memory, err := fs.Get(entry.ID)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: skipping memory %s: %v\n", entry.ID, err)
+				continue
+			}
+			memories = append(memories, *memory)
+		} else {
+			memories = append(memories, Memory{
+				ID:        entry.ID,
+				Name:      entry.Name,
+				Labels:    entry.Labels,
+				CreatedAt: entry.CreatedAt,
+				UpdatedAt: entry.UpdatedAt,
+				Content:   "",
+				Metadata:  make(map[string]any),
+			})
+		}
+	}
+
+	return &SearchResponse{
+		Memories: memories,
+		Total:    len(index.Memories),
+	}, nil
+}
+
+// searchFromMemories performs traditional search with full memory loading
+func (fs *FileStorage) searchFromMemories(req SearchRequest) (*SearchResponse, error) {
 	memories, err := fs.List()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list memories: %w", err)
@@ -252,8 +319,79 @@ func (fs *FileStorage) Search(req SearchRequest) (*SearchResponse, error) {
 	}, nil
 }
 
-// List returns all memories
+// matchesIndexEntry checks if an index entry matches search criteria
+func (fs *FileStorage) matchesIndexEntry(entry IndexEntry, req SearchRequest) bool {
+	// Label selector matching
+	if req.LabelSelector != nil {
+		for k, v := range req.LabelSelector {
+			if entry.Labels[k] != v {
+				return false
+			}
+		}
+	}
+
+	// Note: Text queries require full content, so they're handled in searchFromMemories
+	return true
+}
+
+// List returns all memories using optimized index-based loading
 func (fs *FileStorage) List() ([]Memory, error) {
+	return fs.ListWithOptions(ListOptions{
+		IncludeContent: true,
+		UseIndex:       true,
+	})
+}
+
+// ListWithOptions returns memories with configurable loading behavior
+func (fs *FileStorage) ListWithOptions(opts ListOptions) ([]Memory, error) {
+	if opts.UseIndex {
+		return fs.listFromIndex(opts.IncludeContent)
+	}
+	return fs.listFromFiles()
+}
+
+// listFromIndex uses the index for fast metadata loading
+func (fs *FileStorage) listFromIndex(includeContent bool) ([]Memory, error) {
+	index, err := fs.readIndex()
+	if err != nil {
+		// Fallback to file-based listing if index is corrupted
+		return fs.listFromFiles()
+	}
+
+	memories := make([]Memory, 0, len(index.Memories))
+
+	if !includeContent {
+		// Fast metadata-only listing
+		for _, entry := range index.Memories {
+			memories = append(memories, Memory{
+				ID:        entry.ID,
+				Name:      entry.Name,
+				Labels:    entry.Labels,
+				CreatedAt: entry.CreatedAt,
+				UpdatedAt: entry.UpdatedAt,
+				Content:   "", // Skip content for performance
+				Metadata:  make(map[string]any),
+			})
+		}
+		return memories, nil
+	}
+
+	// Load full content when requested
+	for _, entry := range index.Memories {
+		memory, err := fs.Get(entry.ID)
+		if err != nil {
+			// Skip corrupted memories but continue
+			fmt.Fprintf(os.Stderr, "Warning: skipping memory %s: %v\n", entry.ID, err)
+			continue
+		}
+		memories = append(memories, *memory)
+	}
+
+	return memories, nil
+}
+
+// listFromFiles provides the original file-based listing as fallback
+func (fs *FileStorage) listFromFiles() ([]Memory, error) {
 	files, err := filepath.Glob(filepath.Join(fs.memoriesDir, "*.json"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to glob memory files: %w", err)

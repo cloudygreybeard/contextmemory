@@ -36,6 +36,12 @@
   "contributes": {
     "commands": [
       {
+        "command": "contextmemory.reloadChatMemory",
+        "title": "Reload Previous Chat",
+        "category": "ContextMemory",
+        "icon": "$(history)"
+      },
+      {
         "command": "contextmemory.createMemoryFromChat",
         "title": "Capture Current Chat",
         "category": "ContextMemory",
