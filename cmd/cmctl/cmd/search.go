@@ -13,9 +13,14 @@ var searchCmd = &cobra.Command{
 	Short: "Search memories",
 	Long: `Search memories by text query and/or label selectors.
 
+Performance Options:
+  --no-content   Fast metadata-only search (exclude memory content)
+  --no-index     Force file-based search (slower but more robust)
+
 Examples:
   cmctl search --query "authentication"                        # Search by text
   cmctl search --labels "type=session"                         # Search by labels
+  cmctl search --labels "type=session" --no-content            # Metadata-only search
   cmctl search --query "API" --labels "type=code" --limit 5    # Combined search
   cmctl search --query "auth" -o json                          # JSON output
   cmctl search -q "session" -o jsonpath='{.items[*].spec.name}' # Extract names`,
@@ -27,6 +32,8 @@ var (
 	searchLabels     string
 	searchLimit      int
 	searchOutputFlag string
+	searchNoIndex    bool
+	searchNoContent  bool
 )
 
 func init() {
@@ -36,6 +43,8 @@ func init() {
 	searchCmd.Flags().StringVarP(&searchLabels, "labels", "l", "", "Label selector (format: key1=value1,key2=value2)")
 	searchCmd.Flags().IntVar(&searchLimit, "limit", 10, "Limit results")
 	searchCmd.Flags().StringVarP(&searchOutputFlag, "output", "o", "", "Output format: table|json|yaml|jsonpath=<template>|go-template=<template>")
+	searchCmd.Flags().BoolVar(&searchNoIndex, "no-index", false, "Disable index-based optimizations (force file-based search)")
+	searchCmd.Flags().BoolVar(&searchNoContent, "no-content", false, "Exclude memory content from results (faster for metadata-only searches)")
 }
 
 func runSearch(cmd *cobra.Command, args []string) error {
@@ -49,11 +58,13 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	// Parse label selector
 	labelSelector := parseLabels(searchLabels)
 
-	// Create search request
+	// Create search request with performance options
 	req := storage.SearchRequest{
-		Query:         searchQuery,
-		LabelSelector: labelSelector,
-		Limit:         searchLimit,
+		Query:          searchQuery,
+		LabelSelector:  labelSelector,
+		Limit:          searchLimit,
+		UseIndex:       !searchNoIndex,
+		IncludeContent: !searchNoContent,
 	}
 
 	// Search memories
