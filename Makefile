@@ -1,7 +1,7 @@
 # ContextMemory - Development Automation
-# Clean, simple, file-based memory management
+# Clean, simple, file-based session context management
 
-.PHONY: help setup build test clean install dev.start dev.stop info.status
+.PHONY: help setup build test clean install dev.start dev.stop info.status version.sync version.validate version.bump-patch version.bump-minor version.bump-major
 
 # Default target
 help:
@@ -36,6 +36,14 @@ help:
 	@echo "Release:"
 	@echo "  release         Create release with GoReleaser"
 	@echo "  release.snapshot Create snapshot release"
+	@echo "  release.validate Run release validation"
+	@echo ""
+	@echo "Version Management:"
+	@echo "  version.sync    Sync all versions from git tag (recommended)"
+	@echo "  version.validate Check version consistency across components"
+	@echo "  version.bump-patch Bump patch version with git tag"
+	@echo "  version.bump-minor Bump minor version with git tag"
+	@echo "  version.bump-major Bump major version with git tag"
 	@echo ""
 	@echo "Information:"
 	@echo "  info.status     Show project status"
@@ -176,7 +184,7 @@ install.ui:
 		echo "[INFO] UI not ready for installation"; \
 	fi
 
-# Create extension package
+# Create extension package (convenience alias)
 package: package.ui
 
 # Testing
@@ -266,7 +274,7 @@ test.all: test.cli test.cli.functional test.integration
 test.all.coverage: test.cli.coverage test.cli.functional test.integration
 	@echo "[SUCCESS] All tests with coverage completed"
 
-validate.release:
+release.validate:
 	@echo "[VALIDATE] Running release validation..."
 	./scripts/validate-release.sh
 
@@ -322,3 +330,19 @@ info.structure:
 	@echo "ContextMemory Structure"
 	@echo "========================="
 	@tree -I 'node_modules|*.log|.git' . 2>/dev/null || find . -type f -not -path './node_modules/*' -not -path './.git/*' -not -name '*.log' | head -20
+
+# Git-based version management
+version.sync:
+	@./hack/version sync
+
+version.validate:
+	@./hack/version validate
+
+version.bump-patch:
+	@./hack/version bump patch
+
+version.bump-minor:
+	@./hack/version bump minor
+
+version.bump-major:
+	@./hack/version bump major

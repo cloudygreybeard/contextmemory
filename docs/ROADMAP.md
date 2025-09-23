@@ -3,7 +3,7 @@
 ## Current Status: v0.6.1 
 
 ### Completed Features
-- Core CRUD operations for memory management
+- Core CRUD operations for session context management
 - File-based storage with extensible provider architecture
 - `cmctl` CLI with `kubectl`-style commands and output formats
 - VS Code extension with tree view and chat capture

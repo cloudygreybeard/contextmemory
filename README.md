@@ -1,6 +1,6 @@
 # ContextMemory
 
-> Clean, simple, file-based memory management for LLM development workflows
+> Clean, simple, file-based session context management for LLM development workflows
 
 [![Version](https://img.shields.io/badge/version-0.6.3-blue.svg)](https://github.com/cloudygreybeard/contextmemory)
 [![CI](https://github.com/cloudygreybeard/contextmemory/workflows/Test/badge.svg)](https://github.com/cloudygreybeard/contextmemory/actions)

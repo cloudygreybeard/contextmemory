@@ -2,7 +2,7 @@
 /**
  * ContextMemory v2 CLI
  * 
- * Simple command-line interface for memory management
+ * Simple command-line interface for session context management
  * Usage: cm <command> [options]
  */
 
