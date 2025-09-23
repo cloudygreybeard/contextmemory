@@ -70,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] - 2025-09-21
 
 ### Added
-- Initial release with file-based memory management
+- Initial release with file-based session context management
 - CLI tool (`cmctl`) with create, get, list, search, delete operations
 - VS Code extension with tree view and commands
 - Label-based organization system

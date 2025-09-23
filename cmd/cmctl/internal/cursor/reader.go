@@ -113,7 +113,7 @@ func (wr *WorkspaceReader) GetChatData(dbPath string) (*ChatData, error) {
 	}
 
 	chatData := &ChatData{Tabs: []ChatTab{}}
-	
+
 	// First, get composer data to extract titles
 	composerTitles := make(map[string]string) // map[composerID]title
 	var composerItem CursorItem
@@ -131,8 +131,9 @@ func (wr *WorkspaceReader) GetChatData(dbPath string) (*ChatData, error) {
 	// Try different possible chat data keys (different Cursor versions)
 	chatKeys := []string{
 		"workbench.panel.aichat.view.aichat.chatdata", // Newer format with actual titles
-		"aiService.prompts",                            // Legacy format
-		"composer.composerData",                        // Composer chats
+		"aiService.generations",                       // Full generation data (likely contains complete conversation)
+		"aiService.prompts",                           // Legacy format (partial data)
+		"composer.composerData",                       // Composer chats
 	}
 
 	for _, key := range chatKeys {
@@ -148,6 +149,12 @@ func (wr *WorkspaceReader) GetChatData(dbPath string) (*ChatData, error) {
 			var tempData ChatData
 			if err := json.Unmarshal([]byte(item.Value), &tempData); err == nil {
 				chatData.Tabs = append(chatData.Tabs, tempData.Tabs...)
+			}
+		} else if key == "aiService.generations" {
+			// Full generation data - richest source
+			tabs, err := wr.parseAIServiceGenerations(item.Value, composerTitles)
+			if err == nil && len(tabs) > 0 {
+				chatData.Tabs = append(chatData.Tabs, tabs...)
 			}
 		} else if key == "aiService.prompts" {
 			tabs, err := wr.parseAIServicePromptsWithTitles(item.Value, composerTitles)

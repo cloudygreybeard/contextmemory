@@ -3,6 +3,7 @@ package cursor
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 
 	"golang.org/x/text/cases"
@@ -34,11 +35,26 @@ type ComposerEntry struct {
 	Messages          []Message `json:"messages,omitempty"`
 }
 
+// AIServiceGeneration represents the richer aiService.generations data structure
+type AIServiceGeneration struct {
+	UnixMs          int64  `json:"unixMs"`
+	GenerationUUID  string `json:"generationUUID"`
+	Type            string `json:"type"`
+	TextDescription string `json:"textDescription"`
+	ConversationID  string `json:"conversationId,omitempty"`
+	Role            string `json:"role,omitempty"`
+}
+
 // parseAIServicePromptsWithTitles converts aiService.prompts data to ChatTab format with composer titles
 func (wr *WorkspaceReader) parseAIServicePromptsWithTitles(value string, composerTitles map[string]string) ([]ChatTab, error) {
 	chatTab, err := wr.parseAIServicePromptsToSingleChat(value)
 	if err != nil {
 		return nil, err
+	}
+
+	// Fix nil pointer bug - check if chatTab is nil
+	if chatTab == nil {
+		return []ChatTab{}, nil
 	}
 
 	// Try to match with composer title
@@ -64,7 +80,6 @@ func (wr *WorkspaceReader) parseAIServicePromptsWithTitles(value string, compose
 	return []ChatTab{*chatTab}, nil
 }
 
-
 // parseAIServicePromptsToSingleChat is the core logic for parsing aiService.prompts
 func (wr *WorkspaceReader) parseAIServicePromptsToSingleChat(value string) (*ChatTab, error) {
 	// Try to parse as array of prompts
@@ -85,13 +100,22 @@ func (wr *WorkspaceReader) parseAIServicePromptsToSingleChat(value string) (*Cha
 	// Convert to ChatTab format
 	var messages []Message
 	for i, prompt := range prompts {
-		// Determine role - alternate between user and assistant
-		role := "user"
-		if i%2 == 1 {
-			role = "assistant"
-		}
+		// Determine role - prioritize explicit role, then use smarter heuristics
+		role := "user" // default
 		if prompt.Role != "" {
 			role = prompt.Role
+		} else {
+			// Improved role detection: look at content patterns
+			content := prompt.Text
+			if len(content) > 0 {
+				// Look for assistant-like responses (longer, explanatory)
+				if len(content) > 200 || containsAssistantMarkers(content) {
+					role = "assistant"
+				} else {
+					// Shorter content typically from user
+					role = "user"
+				}
+			}
 		}
 
 		timestamp := prompt.Timestamp
@@ -169,4 +193,138 @@ func (wr *WorkspaceReader) parseComposerData(value string) ([]ChatTab, error) {
 	}
 
 	return chatTabs, nil
+}
+
+// parseAIServiceGenerations converts aiService.generations to ChatTab format (richer data source)
+func (wr *WorkspaceReader) parseAIServiceGenerations(value string, composerTitles map[string]string) ([]ChatTab, error) {
+	var generations []AIServiceGeneration
+	if err := json.Unmarshal([]byte(value), &generations); err != nil {
+		return nil, fmt.Errorf("failed to parse AI service generations: %w", err)
+	}
+
+	if len(generations) == 0 {
+		return []ChatTab{}, nil
+	}
+
+	// Group generations into conversations and extract full content
+	conversationMap := make(map[string][]AIServiceGeneration)
+	for _, gen := range generations {
+		if gen.Type == "composer" { // Only process AI chat pane interactions
+			key := gen.ConversationID
+			if key == "" {
+				// Use generation UUID as fallback for grouping
+				key = gen.GenerationUUID
+			}
+			conversationMap[key] = append(conversationMap[key], gen)
+		}
+	}
+
+	var chatTabs []ChatTab
+	for _, convGenerations := range conversationMap {
+		if len(convGenerations) == 0 {
+			continue
+		}
+
+		// Sort generations by timestamp
+		sort.Slice(convGenerations, func(i, j int) bool {
+			return convGenerations[i].UnixMs < convGenerations[j].UnixMs
+		})
+
+		// Extract full conversation from textDescription fields
+		var messages []Message
+		conversationContent := ""
+
+		for i, gen := range convGenerations {
+			if gen.TextDescription != "" {
+				conversationContent += gen.TextDescription + "\n\n"
+
+				// Create message from generation
+				message := Message{
+					ID:        gen.GenerationUUID,
+					Role:      determineRoleFromContent(gen.TextDescription, i),
+					Content:   gen.TextDescription,
+					Timestamp: gen.UnixMs,
+					CreatedAt: time.Unix(gen.UnixMs/1000, 0),
+				}
+				messages = append(messages, message)
+			}
+		}
+
+		if len(messages) == 0 {
+			continue
+		}
+
+		// Get title from composer titles or generate from content
+		title := "AI Service Chat"
+		if len(composerTitles) == 1 {
+			for _, t := range composerTitles {
+				title = t
+				break
+			}
+		}
+
+		// Create chat tab
+		chatTab := ChatTab{
+			ID:        fmt.Sprintf("generations-%d", convGenerations[0].UnixMs),
+			Title:     title,
+			Messages:  messages,
+			Timestamp: convGenerations[len(convGenerations)-1].UnixMs,
+			CreatedAt: time.Unix(convGenerations[0].UnixMs/1000, 0),
+		}
+
+		chatTabs = append(chatTabs, chatTab)
+	}
+
+	return chatTabs, nil
+}
+
+// determineRoleFromContent uses content analysis to determine if content is from user or assistant
+func determineRoleFromContent(content string, index int) string {
+	// Look for clear indicators of assistant responses
+	if containsAssistantMarkers(content) {
+		return "assistant"
+	}
+
+	// Look for user-like patterns (questions, short requests, file references)
+	if containsUserMarkers(content) {
+		return "user"
+	}
+
+	// Fallback: longer content is typically assistant, shorter is user
+	if len(content) > 300 {
+		return "assistant"
+	}
+
+	return "user"
+}
+
+// containsUserMarkers checks if content looks like user input
+func containsUserMarkers(content string) bool {
+	userMarkers := []string{
+		"@", "?", "Can you", "How do I", "What is", "Please", "I want", "I need",
+		"Let's", "Could you", "Would you", "Show me", "Help me", "I'm trying",
+	}
+
+	for _, marker := range userMarkers {
+		if containsIgnoreCase(content, marker) {
+			return true
+		}
+	}
+	return false
+}
+
+// containsAssistantMarkers checks if content looks like assistant response
+func containsAssistantMarkers(content string) bool {
+	assistantMarkers := []string{
+		"I'll", "I can", "Let me", "Here's", "You can", "This will",
+		"```", "Here are", "To do this", "First,", "Next,", "Finally,",
+		"## ", "### ", "**", "- [", "1. ", "2. ", "3. ",
+	}
+
+	for _, marker := range assistantMarkers {
+		if containsIgnoreCase(content, marker) {
+			return true
+		}
+	}
+	return false
 }

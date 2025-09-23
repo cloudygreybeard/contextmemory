@@ -16,8 +16,8 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "cmctl",
-	Short: "ContextMemory - File-based memory management for LLM development workflows",
-	Long: `ContextMemory is a clean, simple, file-based memory management system designed
+	Short: "ContextMemory - File-based session context management for LLM development workflows",
+	Long: `ContextMemory is a clean, simple, file-based session context management system designed
 for LLM development workflows. It provides CRUD operations for session contexts,
 code snippets, and development notes with AI-assisted smart defaults.
 
@@ -33,7 +33,7 @@ Verbosity levels:
 - -v=0 (quiet): Only essential output
 - -v=1 (normal): Standard messages (default)
 - -v=2 (verbose): Debug info and config details`,
-	Version: "0.6.3",
+	Version: "0.7.0",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

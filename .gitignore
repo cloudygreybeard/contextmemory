@@ -149,3 +149,8 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+# Development artifacts
+downloads/
+*.sql
+test_*.js
+.quit

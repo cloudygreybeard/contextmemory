@@ -1,0 +1,247 @@
+#!/bin/bash
+# ContextMemory - Unified Version Management
+# Git-based version control for all components
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Helper functions
+log_info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
+log_success() { echo -e "${GREEN}✅ $1${NC}"; }
+log_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+log_error() { echo -e "${RED}❌ $1${NC}"; }
+
+# Get version from git (latest tag)
+get_git_version() {
+    git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"
+}
+
+# Clean version (remove 'v' prefix)
+clean_version() {
+    echo "$1" | sed 's/^v//'
+}
+
+# Get current version as clean string
+get_current_version() {
+    clean_version "$(get_git_version)"
+}
+
+# Update all version references from git tag
+sync_versions() {
+    local version_tag=$(get_git_version)
+    local clean_ver=$(clean_version "$version_tag")
+    
+    log_info "Latest git tag: $version_tag"
+    log_info "Clean version: $clean_ver"
+    echo
+    
+    # Update package.json
+    log_info "Updating ui/package.json..."
+    sed -i.bak "s/\"version\": \"[^\"]*\"/\"version\": \"$clean_ver\"/" ui/package.json && rm ui/package.json.bak
+    
+    # Update extension service
+    log_info "Updating ui/src/services/cmctlService.ts..."
+    sed -i.bak "s/EXTENSION_VERSION = '[^']*'/EXTENSION_VERSION = '$clean_ver'/" ui/src/services/cmctlService.ts && rm ui/src/services/cmctlService.ts.bak
+    
+    # Update CLI root
+    log_info "Updating cmd/cmctl/cmd/root.go..."
+    sed -i.bak "s/Version: \"[^\"]*\"/Version: \"$clean_ver\"/" cmd/cmctl/cmd/root.go && rm cmd/cmctl/cmd/root.go.bak
+    
+    echo
+    log_success "Version sync complete! All components now at $clean_ver"
+    echo
+    echo "📋 Updated files:"
+    echo "  • ui/package.json: $(grep '"version":' ui/package.json)"
+    echo "  • ui/src/services/cmctlService.ts: $(grep 'EXTENSION_VERSION = ' ui/src/services/cmctlService.ts | xargs)"
+    echo "  • cmd/cmctl/cmd/root.go: $(grep 'Version:' cmd/cmctl/cmd/root.go | xargs)"
+}
+
+# Validate version consistency
+validate_versions() {
+    local git_version=$(get_current_version)
+    local pkg_version=$(grep '"version":' ui/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
+    local ts_version=$(grep 'EXTENSION_VERSION = ' ui/src/services/cmctlService.ts | sed "s/.*EXTENSION_VERSION = '\([^']*\)'.*/\1/")
+    local go_version=$(grep 'Version:' cmd/cmctl/cmd/root.go | sed 's/.*Version: "\([^"]*\)".*/\1/')
+    
+    echo "🔍 Version validation:"
+    echo "  Git tag:     $git_version"
+    echo "  package.json: $pkg_version"
+    echo "  TypeScript:  $ts_version"
+    echo "  Go CLI:      $go_version"
+    echo
+    
+    if [[ "$git_version" == "$pkg_version" && "$git_version" == "$ts_version" && "$git_version" == "$go_version" ]]; then
+        log_success "All versions are synchronized!"
+        return 0
+    else
+        log_error "Version mismatch detected!"
+        echo
+        echo "💡 Fix with: ./hack/version sync"
+        return 1
+    fi
+}
+
+# Bump version based on type
+bump_version() {
+    local current=$(get_current_version)
+    local bump_type=$1
+    
+    case $bump_type in
+        patch)
+            echo "$current" | awk -F. '{$3++; print $1"."$2"."$3}'
+            ;;
+        minor)
+            echo "$current" | awk -F. '{$2++; $3=0; print $1"."$2"."$3}'
+            ;;
+        major)
+            echo "$current" | awk -F. '{$1++; $2=0; $3=0; print $1"."$2"."$3}'
+            ;;
+        *)
+            log_error "Invalid bump type: $bump_type"
+            echo "Use: patch, minor, or major" >&2
+            exit 1
+            ;;
+    esac
+}
+
+# Create new version tag and sync
+create_version() {
+    local bump_type=$1
+    local current=$(get_current_version)
+    local new_version=$(bump_version "$bump_type")
+    local new_tag="v$new_version"
+    
+    log_info "Version bump: $current → $new_version"
+    log_info "Creating git tag: $new_tag"
+    
+    # Create the tag
+    git tag "$new_tag"
+    
+    log_info "Syncing versions across components..."
+    sync_versions
+    
+    echo
+    log_success "Version bump complete!"
+    echo "📋 Next steps:"
+    echo "   1. Review changes: git diff"
+    echo "   2. Commit changes: git add -A && git commit -m 'chore: bump version to $new_version'"
+    echo "   3. Push with tags: git push origin main --tags"
+}
+
+# Show current status
+show_status() {
+    local git_tag=$(get_git_version)
+    local clean_ver=$(get_current_version)
+    
+    echo "🏷️  Current git tag: $git_tag"
+    echo "📦 Current version: $clean_ver"
+    echo
+    
+    # Quick validation
+    if validate_versions >/dev/null 2>&1; then
+        log_success "All versions are in sync"
+    else
+        log_warning "Versions are out of sync"
+        echo "   Run: ./hack/version sync"
+    fi
+}
+
+# List recent versions
+list_versions() {
+    local limit=${1:-10}
+    
+    echo "📚 Recent versions (last $limit):"
+    git tag --sort=-v:refname | head -$limit | while read tag; do
+        local clean_ver=$(clean_version "$tag")
+        local date=$(git log -1 --format=%ai "$tag" 2>/dev/null | cut -d' ' -f1 || echo "unknown")
+        printf "  %-10s %s\n" "$clean_ver" "$date"
+    done
+}
+
+# Help message
+show_help() {
+    echo "ContextMemory Version Management"
+    echo "================================"
+    echo
+    echo "USAGE:"
+    echo "  ./hack/version <command> [options]"
+    echo
+    echo "COMMANDS:"
+    echo "  sync              Sync all component versions from git tag"
+    echo "  validate          Check version consistency across components"
+    echo "  current           Show current version"
+    echo "  status            Show version status and sync state"
+    echo "  list [N]          List recent versions (default: 10)"
+    echo
+    echo "VERSION BUMPING:"
+    echo "  bump patch        Bump patch version (0.7.0 → 0.7.1)"
+    echo "  bump minor        Bump minor version (0.7.0 → 0.8.0)"
+    echo "  bump major        Bump major version (0.7.0 → 1.0.0)"
+    echo
+    echo "ALIASES:"
+    echo "  tag               Show current git tag"
+    echo "  help, -h, --help  Show this help"
+    echo
+    echo "EXAMPLES:"
+    echo "  ./hack/version sync              # Sync from git tag"
+    echo "  ./hack/version bump patch        # Create v0.7.1 and sync"
+    echo "  ./hack/version list 5            # Show last 5 versions"
+    echo
+    echo "This script uses git tags as the single source of truth for versioning."
+}
+
+# Main command dispatcher
+case "${1:-help}" in
+    sync)
+        sync_versions
+        ;;
+    validate)
+        validate_versions
+        ;;
+    current)
+        get_current_version
+        ;;
+    tag)
+        get_git_version
+        ;;
+    status)
+        show_status
+        ;;
+    list)
+        list_versions "${2:-10}"
+        ;;
+    bump)
+        case "${2:-help}" in
+            patch|minor|major)
+                create_version "$2"
+                ;;
+            help)
+                echo "Usage: ./hack/version bump [patch|minor|major]"
+                echo
+                echo "  patch    Bump patch version (0.7.0 → 0.7.1)"
+                echo "  minor    Bump minor version (0.7.0 → 0.8.0)"  
+                echo "  major    Bump major version (0.7.0 → 1.0.0)"
+                ;;
+            *)
+                log_error "Invalid bump type: $2"
+                echo "Use: ./hack/version bump [patch|minor|major]"
+                exit 1
+                ;;
+        esac
+        ;;
+    help|-h|--help)
+        show_help
+        ;;
+    *)
+        log_error "Unknown command: $1"
+        echo
+        echo "Use './hack/version help' for usage information"
+        exit 1
+        ;;
+esac

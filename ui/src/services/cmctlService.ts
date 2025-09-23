@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import * as os from 'os';
 import { promisify } from 'util';
 import { Memory, CreateMemoryRequest, SearchMemoryRequest, SearchMemoryResponse, StorageInfo, CMCtlConfig } from '../types/memory';
 
@@ -11,7 +14,7 @@ const execAsync = promisify(cp.exec);
 export class CMCtlService implements vscode.Disposable {
     private config: CMCtlConfig;
     private outputChannel: vscode.OutputChannel;
-    private static readonly EXTENSION_VERSION = '0.6.3';
+    private static readonly EXTENSION_VERSION = '0.7.0';
 
     constructor() {
         this.outputChannel = vscode.window.createOutputChannel('ContextMemory');
@@ -425,10 +428,18 @@ export class CMCtlService implements vscode.Disposable {
     }
 
     /**
-     * Import chat from Cursor AI pane
+     * Import chat from Cursor AI pane - Enhanced with export integration
      */
     async importCursorChat(): Promise<{ success: boolean; memoryName?: string; error?: string }> {
         try {
+            // First, try to use Cursor's native export functionality
+            const exportResult = await this.tryNativeCursorExport();
+            if (exportResult.success) {
+                return exportResult;
+            }
+            
+            // Fallback to database parsing approach
+            this.outputChannel.appendLine('Native export failed, falling back to database parsing...');
             const command = this.buildCommand('import-cursor-chat', ['--latest']);
             const output = await this.executeCommand(command);
             
@@ -453,6 +464,182 @@ export class CMCtlService implements vscode.Disposable {
                 error: error.message || 'Failed to import cursor chat'
             };
         }
+    }
+
+    /**
+     * Try to use Cursor's native export functionality
+     */
+    private async tryNativeCursorExport(): Promise<{ success: boolean; memoryName?: string; error?: string }> {
+        try {
+            // Discover available chat/export commands
+            const commands = await vscode.commands.getCommands(true);
+            const exportCommands = commands.filter(cmd => 
+                (cmd.toLowerCase().includes('export') && cmd.toLowerCase().includes('chat')) ||
+                cmd.toLowerCase().includes('cursor.export') ||
+                cmd.toLowerCase().includes('aichat.export')
+            );
+            
+            this.outputChannel.appendLine(`Found potential export commands: ${exportCommands.join(', ')}`);
+            
+            // Try known command patterns
+            const possibleCommands = [
+                'cursor.exportChat',
+                'cursor.aichat.export',
+                'workbench.panel.aichat.export',
+                'aichat.export',
+                'ai.exportChat',
+                ...exportCommands
+            ];
+            
+            for (const cmdName of possibleCommands) {
+                try {
+                    this.outputChannel.appendLine(`Trying command: ${cmdName}`);
+                    await vscode.commands.executeCommand(cmdName);
+                    
+                    // If command executed successfully, wait for export file
+                    const exportedContent = await this.waitForExportFile();
+                    if (exportedContent) {
+                        return await this.importFromExportedContent(exportedContent);
+                    }
+                } catch (cmdError: any) {
+                    this.outputChannel.appendLine(`Command ${cmdName} failed: ${cmdError.message}`);
+                    continue;
+                }
+            }
+            
+            throw new Error('No working export command found');
+        } catch (error: any) {
+            this.outputChannel.appendLine(`Native export failed: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Wait for and detect exported chat file
+     */
+    private async waitForExportFile(): Promise<string | null> {
+        try {
+            // Strategy 1: Monitor Downloads folder for new .md files
+            const downloadsPath = path.join(os.homedir(), 'Downloads');
+            this.outputChannel.appendLine(`Monitoring Downloads folder: ${downloadsPath}`);
+            
+            // Check if we have permission to read Downloads
+            try {
+                await fs.access(downloadsPath, fs.constants.R_OK);
+            } catch (permError: any) {
+                this.outputChannel.appendLine(`Downloads folder access denied (${permError.code}), skipping auto-detection`);
+                throw new Error('Downloads access denied');
+            }
+            
+            // Get initial file list
+            const initialFiles = await this.getMarkdownFiles(downloadsPath);
+            
+            // Wait up to 10 seconds for a new file
+            for (let i = 0; i < 20; i++) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const currentFiles = await this.getMarkdownFiles(downloadsPath);
+                const newFiles = currentFiles.filter(file => !initialFiles.includes(file));
+                
+                if (newFiles.length > 0) {
+                    // Found a new markdown file - likely our export
+                    const newestFile = newFiles[0]; // Take the first new file
+                    this.outputChannel.appendLine(`Found new export file: ${newestFile}`);
+                    
+                    // Read and return the content
+                    return await fs.readFile(newestFile, 'utf8');
+                }
+            }
+            
+            // Strategy 2: Prompt user to select the exported file
+            this.outputChannel.appendLine('No new file detected, prompting user to select exported file...');
+            
+            const selectedFile = await vscode.window.showOpenDialog({
+                canSelectFiles: true,
+                canSelectFolders: false,
+                canSelectMany: false,
+                filters: {
+                    'Markdown files': ['md']
+                },
+                title: 'Select the exported chat file'
+            });
+            
+            if (selectedFile && selectedFile[0]) {
+                const filePath = selectedFile[0].fsPath;
+                this.outputChannel.appendLine(`User selected file: ${filePath}`);
+                return await fs.readFile(filePath, 'utf8');
+            }
+            
+            this.outputChannel.appendLine('No file selected, falling back to database parsing');
+            return null;
+            
+        } catch (error: any) {
+            this.outputChannel.appendLine(`Error in waitForExportFile: ${error.message}`);
+            return null;
+        }
+    }
+
+    /**
+     * Get list of markdown files in directory, sorted by modification time (newest first)
+     */
+    private async getMarkdownFiles(directory: string): Promise<string[]> {
+        try {
+            const files = await fs.readdir(directory);
+            const mdFiles = files.filter(file => file.endsWith('.md'));
+            const fullPaths = mdFiles.map(file => path.join(directory, file));
+            
+            // Sort by modification time (newest first)
+            const fileStats = await Promise.all(
+                fullPaths.map(async (filePath) => ({
+                    path: filePath,
+                    mtime: (await fs.stat(filePath)).mtime
+                }))
+            );
+            
+            return fileStats
+                .sort((a, b) => b.mtime.getTime() - a.mtime.getTime())
+                .map(f => f.path);
+        } catch (error: any) {
+            this.outputChannel.appendLine(`Error reading directory ${directory}: ${error.message}`);
+            return [];
+        }
+    }
+
+    /**
+     * Import memory from exported chat content
+     */
+    private async importFromExportedContent(content: string): Promise<{ success: boolean; memoryName?: string; error?: string }> {
+        try {
+            // Create memory from the exported content
+            // This would involve parsing the exported markdown and creating a memory
+            const lines = content.split('\n');
+            const title = lines.find(line => line.startsWith('# '))?.substring(2) || 'Exported Chat';
+            
+            // Use CLI to create memory from content
+            const createResult = await this.createMemoryFromText(title, content);
+            
+            return {
+                success: true,
+                memoryName: title
+            };
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Create memory from text content
+     */
+    private async createMemoryFromText(name: string, content: string): Promise<void> {
+        // Use --content flag directly instead of non-existent --file flag
+        const command = this.buildCommand('create', ['--name', name, '--content', content, '--labels', 'type=chat,source=cursor-ai-pane']);
+        await this.executeCommand(command);
     }
 
     /**
