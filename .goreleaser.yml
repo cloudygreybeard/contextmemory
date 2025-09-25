@@ -116,6 +116,38 @@ changelog:
     - title: Others
       order: 999
 
+brews:
+  - name: cmctl
+    ids:
+      - standard
+    homepage: https://github.com/cloudygreybeard/contextmemory
+    description: "Session context management CLI for LLM development workflows"
+    license: "Apache-2.0"
+    
+    tap:
+      owner: cloudygreybeard
+      name: homebrew-contextmemory
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    
+    folder: Formula
+    commit_author:
+      name: contextmemory-bot
+      email: bot@contextmemory.dev
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    
+    dependencies:
+      - name: git
+    
+    test: |
+      system "#{bin}/cmctl", "--version"
+    
+    caveats: |
+      To complete your ContextMemory setup, install the VS Code extension:
+        cursor --install-extension cloudygreybeard.contextmemory
+      
+      Or download from VS Code Marketplace:
+        https://marketplace.visualstudio.com/items?itemName=cloudygreybeard.contextmemory
+
 release:
   github:
     owner: cloudygreybeard
@@ -126,12 +158,16 @@ release:
   footer: |
     ## Installation
     
-    ### CLI Tool
+    ### Homebrew (macOS/Linux)
+    ```bash
+    brew tap cloudygreybeard/contextmemory
+    brew install cmctl
+    cursor --install-extension cloudygreybeard.contextmemory
+    ```
+    
+    ### Direct Download
     Download the appropriate binary for your platform from the assets above.
     
     ### VS Code Extension
     Install from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=cloudygreybeard.contextmemory) or download the `.vsix` file.
-    
-    ### WebAssembly Integration
-    The WebAssembly build is automatically included in the VS Code extension for embedded functionality.
 

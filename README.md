@@ -248,6 +248,24 @@ All settings can be configured through the VS Code settings UI or via the
 
 ### Installation
 
+#### Homebrew (Recommended for macOS/Linux)
+
+```bash
+# Add the ContextMemory tap
+brew tap cloudygreybeard/contextmemory
+
+# Install the CLI
+brew install cmctl
+
+# Install VS Code extension
+cursor --install-extension cloudygreybeard.contextmemory
+
+# Verify installation
+cmctl --version
+```
+
+#### Manual Installation
+
 ```bash
 # Clone and build
 git clone https://github.com/cloudygreybeard/contextmemory.git
@@ -263,8 +281,12 @@ make package.ui     # Create .vsix package
 make install.ui     # Install in VS Code/Cursor
 
 # Verify installation
-cmctl --version     # Should show: cmctl version 0.6.3
+cmctl --version     # Should show: cmctl version 0.6.4
 ```
+
+#### Direct Download
+
+Download the latest release for your platform from [GitHub Releases](https://github.com/cloudygreybeard/contextmemory/releases/latest).
 
 ### Development Workflow
 

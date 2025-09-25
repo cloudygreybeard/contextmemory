@@ -245,6 +245,25 @@ release.snapshot:
 	fi
 	@echo "[SUCCESS] Snapshot release completed"
 
+# Test Homebrew formula generation
+homebrew.test:
+	@echo "[HOMEBREW] Testing formula generation..."
+	@if command -v goreleaser >/dev/null 2>&1; then \
+		goreleaser release --snapshot --clean --config .goreleaser.yml; \
+		if [ -f dist/homebrew/Formula/cmctl.rb ]; then \
+			echo "[SUCCESS] Homebrew formula generated successfully"; \
+			echo "[INFO] Formula location: dist/homebrew/Formula/cmctl.rb"; \
+			echo "[INFO] Preview of formula:"; \
+			head -20 dist/homebrew/Formula/cmctl.rb; \
+		else \
+			echo "[ERROR] Homebrew formula not generated"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "[ERROR] GoReleaser not installed. Install with: go install github.com/goreleaser/goreleaser@latest"; \
+		exit 1; \
+	fi
+
 # Test CLI functionality  
 test.cli:
 	@echo "[TEST] Running Go unit tests..."

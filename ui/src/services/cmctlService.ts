@@ -363,6 +363,36 @@ export class CMCtlService implements vscode.Disposable {
     }
 
     /**
+     * Update a memory
+     */
+    async updateMemory(id: string, updates: Partial<CreateMemoryRequest>): Promise<Memory> {
+        try {
+            // Get current memory
+            const currentMemory = await this.getMemory(id);
+            
+            // For now, we'll implement update by recreating the memory
+            // This is a limitation of the current CLI - we should add proper update support
+            const updateRequest: CreateMemoryRequest = {
+                name: updates.name || currentMemory.name,
+                content: updates.content || currentMemory.content,
+                labels: { ...currentMemory.labels, ...(updates.labels || {}) }
+            };
+
+            // Delete the old memory
+            await this.deleteMemory(id, true);
+            
+            // Create the new memory with updated content
+            const updatedMemory = await this.createMemory(updateRequest);
+            
+            this.outputChannel.appendLine(`Memory ${id} updated successfully`);
+            return updatedMemory;
+        } catch (error: any) {
+            this.outputChannel.appendLine(`Failed to update memory: ${error.message}`);
+            throw new Error(`Update failed: ${error.message}`);
+        }
+    }
+
+    /**
      * Delete a memory by ID
      */
     async deleteMemory(memoryId: string, force: boolean = false): Promise<void> {

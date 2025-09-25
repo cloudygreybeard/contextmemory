@@ -208,6 +208,149 @@ export function registerCommands(
         }
     });
 
+    // Edit Memory command
+    const editMemory = vscode.commands.registerCommand('contextmemory.editMemory', async (memoryId?: string) => {
+        try {
+            let targetMemoryId = memoryId;
+            
+            if (!targetMemoryId) {
+                const memories = await cmctlService.listMemories();
+                if (memories.length === 0) {
+                    vscode.window.showInformationMessage('No memories found to edit.');
+                    return;
+                }
+
+                const items = memories.map(memory => ({
+                    label: memory.name,
+                    description: `${Object.entries(memory.labels).map(([k, v]) => `${k}=${v}`).join(', ')}`,
+                    detail: memory.id,
+                    memoryId: memory.id
+                }));
+
+                const selected = await vscode.window.showQuickPick(items, {
+                    placeHolder: 'Select memory to edit',
+                    matchOnDescription: true,
+                    matchOnDetail: true
+                });
+
+                if (!selected) return;
+                targetMemoryId = selected.memoryId;
+            }
+
+            const memory = await cmctlService.getMemory(targetMemoryId);
+            
+            // Create temporary file for editing
+            const tempFile = vscode.Uri.file(`${require('os').tmpdir()}/contextmemory-edit-${targetMemoryId}.md`);
+            const content = `# ${memory.name}
+
+${memory.content}
+
+---
+<!-- Edit content above, save and close to update memory -->
+<!-- Labels: ${Object.entries(memory.labels).map(([k, v]) => `${k}=${v}`).join(', ')} -->`;
+
+            await vscode.workspace.fs.writeFile(tempFile, Buffer.from(content, 'utf8'));
+            const doc = await vscode.workspace.openTextDocument(tempFile);
+            await vscode.window.showTextDocument(doc);
+
+            // Show instructions
+            vscode.window.showInformationMessage(
+                'Edit the memory content and save the file. Close the tab when finished.',
+                'Update Memory',
+                'Cancel'
+            ).then(async (selection) => {
+                if (selection === 'Update Memory') {
+                    try {
+                        const updatedDoc = await vscode.workspace.openTextDocument(tempFile);
+                        let updatedContent = updatedDoc.getText();
+                        
+                        // Remove metadata sections
+                        updatedContent = updatedContent.replace(/---[\s\S]*?$/, '').trim();
+                        updatedContent = updatedContent.replace(/^# .*?\n\n/, '');
+                        
+                        await cmctlService.updateMemory(targetMemoryId, {
+                            content: updatedContent
+                        });
+                        
+                        vscode.window.showInformationMessage(`Memory "${memory.name}" updated successfully`);
+                        memoryTreeProvider.refresh();
+                    } catch (error: any) {
+                        vscode.window.showErrorMessage(`Failed to update memory: ${error.message}`);
+                    }
+                }
+                
+                // Clean up temp file
+                try {
+                    await vscode.workspace.fs.delete(tempFile);
+                } catch {
+                    // Ignore cleanup errors
+                }
+            });
+        } catch (error: any) {
+            vscode.window.showErrorMessage(`Failed to edit memory: ${error.message}`);
+            cmctlService.showOutputChannel();
+        }
+    });
+
+    // Duplicate Memory command
+    const duplicateMemory = vscode.commands.registerCommand('contextmemory.duplicateMemory', async (memoryId?: string) => {
+        try {
+            let targetMemoryId = memoryId;
+            
+            if (!targetMemoryId) {
+                const memories = await cmctlService.listMemories();
+                if (memories.length === 0) {
+                    vscode.window.showInformationMessage('No memories found to duplicate.');
+                    return;
+                }
+
+                const items = memories.map(memory => ({
+                    label: memory.name,
+                    description: `${Object.entries(memory.labels).map(([k, v]) => `${k}=${v}`).join(', ')}`,
+                    detail: memory.id,
+                    memoryId: memory.id
+                }));
+
+                const selected = await vscode.window.showQuickPick(items, {
+                    placeHolder: 'Select memory to duplicate',
+                    matchOnDescription: true,
+                    matchOnDetail: true
+                });
+
+                if (!selected) return;
+                targetMemoryId = selected.memoryId;
+            }
+
+            const memory = await cmctlService.getMemory(targetMemoryId);
+            
+            // Get new name for duplicate
+            const newName = await vscode.window.showInputBox({
+                prompt: 'Enter name for duplicated memory',
+                value: `Copy of ${memory.name}`,
+                validateInput: (input) => {
+                    if (!input.trim()) return 'Name cannot be empty';
+                    if (input.length > 100) return 'Name too long';
+                    return null;
+                }
+            });
+
+            if (!newName) return;
+
+            const duplicateRequest: CreateMemoryRequest = {
+                name: newName,
+                content: memory.content,
+                labels: { ...memory.labels, duplicated_from: memory.id }
+            };
+
+            await cmctlService.createMemory(duplicateRequest);
+            vscode.window.showInformationMessage(`Memory duplicated as "${newName}"`);
+            memoryTreeProvider.refresh();
+        } catch (error: any) {
+            vscode.window.showErrorMessage(`Failed to duplicate memory: ${error.message}`);
+            cmctlService.showOutputChannel();
+        }
+    });
+
     // Delete Memory command
     const deleteMemory = vscode.commands.registerCommand('contextmemory.deleteMemory', async (memoryId?: string) => {
         try {
@@ -402,13 +545,21 @@ export function registerCommands(
         }
     });
 
-    // Add essential commands to subscriptions - focused on chat capture
+    // Add essential commands to subscriptions - focused on chat capture and memory management
     context.subscriptions.push(
         reloadChatMemory,
         createMemoryFromChat,
         refreshMemories,
         openMemory,
-        health
+        health,
+        editMemory,
+        duplicateMemory,
+        deleteMemory,
+        searchMemories,
+        listMemories,
+        deleteMemoriesByLabels,
+        deleteAllMemories,
+        openConfig
     );
 }
 

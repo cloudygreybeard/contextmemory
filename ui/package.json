@@ -64,6 +64,24 @@
         "title": "Check Health",
         "category": "ContextMemory",
         "icon": "$(pulse)"
+      },
+      {
+        "command": "contextmemory.editMemory",
+        "title": "Edit Memory",
+        "category": "ContextMemory",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "contextmemory.deleteMemory",
+        "title": "Delete Memory",
+        "category": "ContextMemory",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "contextmemory.duplicateMemory",
+        "title": "Duplicate Memory",
+        "category": "ContextMemory",
+        "icon": "$(copy)"
       }
     ],
     "views": {
@@ -72,8 +90,17 @@
           "id": "contextmemory.memories",
           "name": "Memories",
           "when": "true",
-          "icon": "$(database)",
+          "icon": "$(notebook)",
           "contextualTitle": "ContextMemory"
+        }
+      ],
+      "explorer": [
+        {
+          "id": "contextmemory.memoriesInExplorer",
+          "name": "Session Context",
+          "when": "config.contextmemory.showInExplorer == true",
+          "icon": "$(notebook)",
+          "contextualTitle": "Session Context"
         }
       ]
     },
@@ -82,7 +109,7 @@
         {
           "id": "contextmemory",
           "title": "ContextMemory",
-          "icon": "$(database)"
+          "icon": "$(notebook)"
         }
       ]
     },
@@ -108,20 +135,35 @@
       "view/title": [
         {
           "command": "contextmemory.createMemoryFromChat",
-          "when": "view == contextmemory.memories",
+          "when": "view == contextmemory.memories || view == contextmemory.memoriesInExplorer",
           "group": "navigation@1"
         },
         {
           "command": "contextmemory.refreshMemories",
-          "when": "view == contextmemory.memories",
+          "when": "view == contextmemory.memories || view == contextmemory.memoriesInExplorer",
           "group": "navigation@2"
         }
       ],
       "view/item/context": [
         {
           "command": "contextmemory.openMemory",
-          "when": "view == contextmemory.memories && viewItem == memory",
+          "when": "(view == contextmemory.memories || view == contextmemory.memoriesInExplorer) && viewItem == memory",
           "group": "navigation@1"
+        },
+        {
+          "command": "contextmemory.editMemory",
+          "when": "(view == contextmemory.memories || view == contextmemory.memoriesInExplorer) && viewItem == memory",
+          "group": "edit@1"
+        },
+        {
+          "command": "contextmemory.duplicateMemory",
+          "when": "(view == contextmemory.memories || view == contextmemory.memoriesInExplorer) && viewItem == memory",
+          "group": "edit@2"
+        },
+        {
+          "command": "contextmemory.deleteMemory",
+          "when": "(view == contextmemory.memories || view == contextmemory.memoriesInExplorer) && viewItem == memory",
+          "group": "destructive@1"
         }
       ]
     },
@@ -173,6 +215,11 @@
           "type": "boolean",
           "default": false,
           "description": "Show memory IDs when listing memories"
+        },
+        "contextmemory.showInExplorer": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show ContextMemory panel in Explorer sidebar instead of dedicated sidebar"
         }
       }
     }

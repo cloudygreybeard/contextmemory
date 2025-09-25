@@ -59,8 +59,14 @@ export async function activate(context: vscode.ExtensionContext) {
     // Initialize tree data provider
     const memoryTreeProvider = new MemoryTreeDataProvider(cmctlService);
     
-    // Register tree view
+    // Register tree views for both sidebar and explorer
     const memoryTreeView = vscode.window.createTreeView('contextmemory.memories', {
+        treeDataProvider: memoryTreeProvider,
+        showCollapseAll: true,
+        canSelectMany: false
+    });
+
+    const memoryExplorerTreeView = vscode.window.createTreeView('contextmemory.memoriesInExplorer', {
         treeDataProvider: memoryTreeProvider,
         showCollapseAll: true,
         canSelectMany: false
@@ -72,6 +78,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Add to subscriptions for proper cleanup
     context.subscriptions.push(
         memoryTreeView,
+        memoryExplorerTreeView,
         cmctlService
     );
 
