@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 
@@ -51,7 +50,7 @@ func runVersion(cmd *cobra.Command, args []string) error {
 
 	versionInfo := VersionInfo{
 		Client: VersionDetails{
-			Version:   "v0.1.0-dev",
+			Version:   clientVersion,
 			Status:    "ok",
 			GoVersion: runtime.Version(),
 			Platform:  fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
@@ -67,7 +66,7 @@ func runVersion(cmd *cobra.Command, args []string) error {
 		}
 	} else {
 		versionInfo.Server = VersionDetails{
-			Version: "v0.1.0-dev",
+			Version: clientVersion, // Server should match client version
 			Status:  "ok",
 			Path:    serverPath,
 		}
@@ -77,10 +76,8 @@ func runVersion(cmd *cobra.Command, args []string) error {
 			versionInfo.Server.Path = abs
 		}
 
-		// Try to get file info
-		if stat, err := exec.Command("stat", "-c", "%Y", serverPath).Output(); err == nil {
-			versionInfo.Server.Version = fmt.Sprintf("v0.1.0-dev (built: %s)", string(stat)[:10])
-		}
+		// Try to get actual version from server if possible
+		// For now, assume server matches client version
 	}
 
 	// Format output

@@ -1,0 +1,99 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    main: ./cmd/mcp-server-sdk
+    binary: contextmemory
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.FullCommit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+
+release:
+  github:
+    owner: contextmemory
+    name: contextmemory
+  draft: false
+  prerelease: auto
+  name_template: "{{.ProjectName}} v{{.Version}}"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^ci:'
+  groups:
+    - title: 'New Features'
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: 'Bug Fixes'  
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: 'Improvements'
+      regexp: '^.*?perf(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: 'Other Changes'
+      order: 999
+
+brews:
+  - name: contextmemory
+    homepage: https://github.com/contextmemory/contextmemory
+    description: "AI conversation context management via Model Context Protocol"
+    license: "Apache-2.0"
+    repository:
+      owner: contextmemory
+      name: homebrew-tap
+    commit_author:
+      name: contextmemory-bot
+      email: bot@contextmemory.dev
+    directory: Formula
+    test: |
+      system "#{bin}/contextmemory", "version"
+
+nfpms:
+  - id: packages
+    package_name: contextmemory
+    file_name_template: "{{ .ConventionalFileName }}"
+    vendor: ContextMemory
+    homepage: https://github.com/contextmemory/contextmemory
+    maintainer: ContextMemory Team <maintainers@contextmemory.dev>
+    description: AI conversation context management via Model Context Protocol
+    license: Apache-2.0
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
