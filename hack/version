@@ -41,7 +41,10 @@ sync_versions() {
     log_info "Clean version: $clean_ver"
     echo
     
-    # Update package.json
+    # Update package.json files
+    log_info "Updating package.json..."
+    sed -i.bak "s/\"version\": \"[^\"]*\"/\"version\": \"$clean_ver\"/" package.json && rm package.json.bak
+    
     log_info "Updating ui/package.json..."
     sed -i.bak "s/\"version\": \"[^\"]*\"/\"version\": \"$clean_ver\"/" ui/package.json && rm ui/package.json.bak
     
@@ -57,6 +60,7 @@ sync_versions() {
     log_success "Version sync complete! All components now at $clean_ver"
     echo
     echo "📋 Updated files:"
+    echo "  • package.json: $(grep '"version":' package.json)"
     echo "  • ui/package.json: $(grep '"version":' ui/package.json)"
     echo "  • ui/src/services/cmctlService.ts: $(grep 'EXTENSION_VERSION = ' ui/src/services/cmctlService.ts | xargs)"
     echo "  • cmd/cmctl/cmd/root.go: $(grep 'Version:' cmd/cmctl/cmd/root.go | xargs)"
@@ -65,18 +69,20 @@ sync_versions() {
 # Validate version consistency
 validate_versions() {
     local git_version=$(get_current_version)
-    local pkg_version=$(grep '"version":' ui/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
+    local root_pkg_version=$(grep '"version":' package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
+    local ui_pkg_version=$(grep '"version":' ui/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
     local ts_version=$(grep 'EXTENSION_VERSION = ' ui/src/services/cmctlService.ts | sed "s/.*EXTENSION_VERSION = '\([^']*\)'.*/\1/")
     local go_version=$(grep 'Version:' cmd/cmctl/cmd/root.go | sed 's/.*Version: "\([^"]*\)".*/\1/')
     
     echo "🔍 Version validation:"
-    echo "  Git tag:     $git_version"
-    echo "  package.json: $pkg_version"
-    echo "  TypeScript:  $ts_version"
-    echo "  Go CLI:      $go_version"
+    echo "  Git tag:         $git_version"
+    echo "  package.json:    $root_pkg_version"
+    echo "  ui/package.json: $ui_pkg_version"
+    echo "  TypeScript:      $ts_version"
+    echo "  Go CLI:          $go_version"
     echo
     
-    if [[ "$git_version" == "$pkg_version" && "$git_version" == "$ts_version" && "$git_version" == "$go_version" ]]; then
+    if [[ "$git_version" == "$root_pkg_version" && "$git_version" == "$ui_pkg_version" && "$git_version" == "$ts_version" && "$git_version" == "$go_version" ]]; then
         log_success "All versions are synchronized!"
         return 0
     else
