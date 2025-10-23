@@ -126,13 +126,13 @@ brews:
     
     tap:
       owner: cloudygreybeard
-      name: homebrew-contextmemory
+      name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     
     folder: Formula
     commit_author:
       name: contextmemory-bot
-      email: bot@contextmemory.dev
+      email: bot@cloudygreybeard.github.io
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
     
     dependencies:
@@ -160,7 +160,7 @@ release:
     
     ### Homebrew (macOS/Linux)
     ```bash
-    brew tap cloudygreybeard/contextmemory
+    brew tap cloudygreybeard/tap
     brew install cmctl
     cursor --install-extension cloudygreybeard.contextmemory
     ```
