@@ -121,21 +121,21 @@ contextmemory config cursor
 }
 ```
 
-#### Package Managers
+#### Package Managers (Planned)
+
+Package manager support is planned for future releases:
 
 ```bash
-# Homebrew (macOS)
+# Homebrew (macOS) - Planned
 brew install contextmemory/tap/contextmemory
 
-# APT (Ubuntu/Debian)
-curl -fsSL https://pkg.contextmemory.dev/gpg | sudo apt-key add -
-echo "deb https://pkg.contextmemory.dev/apt stable main" | sudo tee /etc/apt/sources.list.d/contextmemory.list
-sudo apt update && sudo apt install contextmemory
+# APT (Ubuntu/Debian) - Planned
+sudo apt install contextmemory
 
-# Chocolatey (Windows)
+# Chocolatey (Windows) - Planned
 choco install contextmemory
 
-# Snap (Linux)
+# Snap (Linux) - Planned
 sudo snap install contextmemory
 ```
 
@@ -275,11 +275,11 @@ Option B: Package Manager
 ├── Auto-configure system paths
 └── Service management included
 
-Option C: Installer Script
-├── curl -sSL install.contextmemory.dev | bash
-├── Detect OS and architecture
-├── Download appropriate binary
-├── Configure IDE automatically
+Option C: Build from Source
+├── Clone repository
+├── Build with Go toolchain
+├── Install to system path
+├── Configure IDE manually
 └── Verify installation
 ```
 

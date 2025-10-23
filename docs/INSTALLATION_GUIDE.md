@@ -2,11 +2,15 @@
 
 ## Quick Start
 
-The fastest way to get ContextMemory running with Cursor IDE:
+The fastest way to get ContextMemory running with Cursor IDE is to build from source:
 
 ```bash
-# Download and install (macOS/Linux)
-curl -sSL https://install.contextmemory.dev | bash
+# Clone repository
+git clone https://github.com/cloudygreybeard/contextmemory.git
+cd contextmemory
+
+# Build and install
+make install
 
 # Configure Cursor automatically  
 contextmemory config cursor
@@ -21,22 +25,22 @@ contextmemory test
 
 #### macOS (Apple Silicon)
 ```bash
-curl -L https://github.com/contextmemory/contextmemory/releases/latest/download/contextmemory-darwin-arm64.tar.gz | tar xz
+curl -L https://github.com/cloudygreybeard/contextmemory/releases/latest/download/contextmemory-darwin-arm64.tar.gz | tar xz
 ```
 
 #### macOS (Intel)
 ```bash
-curl -L https://github.com/contextmemory/contextmemory/releases/latest/download/contextmemory-darwin-amd64.tar.gz | tar xz
+curl -L https://github.com/cloudygreybeard/contextmemory/releases/latest/download/contextmemory-darwin-amd64.tar.gz | tar xz
 ```
 
 #### Linux (x64)
 ```bash
-curl -L https://github.com/contextmemory/contextmemory/releases/latest/download/contextmemory-linux-amd64.tar.gz | tar xz
+curl -L https://github.com/cloudygreybeard/contextmemory/releases/latest/download/contextmemory-linux-amd64.tar.gz | tar xz
 ```
 
 #### Windows (x64)
 ```powershell
-Invoke-WebRequest -Uri "https://github.com/contextmemory/contextmemory/releases/latest/download/contextmemory-windows-amd64.zip" -OutFile "contextmemory.zip"
+Invoke-WebRequest -Uri "https://github.com/cloudygreybeard/contextmemory/releases/latest/download/contextmemory-windows-amd64.zip" -OutFile "contextmemory.zip"
 Expand-Archive -Path "contextmemory.zip" -DestinationPath "."
 ```
 
@@ -167,77 +171,9 @@ ContextMemory can work with any IDE that supports the MCP protocol:
 
 ## Package Manager Installation
 
-### Homebrew (macOS)
+### Future Package Manager Support
 
-```bash
-# Add tap
-brew tap contextmemory/tap
-
-# Install
-brew install contextmemory
-
-# Configure Cursor
-contextmemory config cursor
-```
-
-### APT (Ubuntu/Debian)
-
-```bash
-# Add repository
-curl -fsSL https://pkg.contextmemory.dev/gpg | sudo apt-key add -
-echo "deb https://pkg.contextmemory.dev/apt stable main" | sudo tee /etc/apt/sources.list.d/contextmemory.list
-
-# Install
-sudo apt update
-sudo apt install contextmemory
-
-# Configure
-contextmemory config cursor
-```
-
-### YUM/DNF (RHEL/Fedora)
-
-```bash
-# Add repository
-sudo rpm --import https://pkg.contextmemory.dev/gpg
-sudo tee /etc/yum.repos.d/contextmemory.repo <<EOF
-[contextmemory]
-name=ContextMemory Repository
-baseurl=https://pkg.contextmemory.dev/rpm
-enabled=1
-gpgcheck=1
-gpgkey=https://pkg.contextmemory.dev/gpg
-EOF
-
-# Install
-sudo dnf install contextmemory  # or sudo yum install contextmemory
-
-# Configure
-contextmemory config cursor
-```
-
-### Chocolatey (Windows)
-
-```powershell
-# Install Chocolatey if not already installed
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-
-# Install ContextMemory
-choco install contextmemory
-
-# Configure
-contextmemory config cursor
-```
-
-### Snap (Linux)
-
-```bash
-# Install
-sudo snap install contextmemory
-
-# Configure
-contextmemory config cursor
-```
+Package manager distribution (Homebrew, APT, Chocolatey, Snap) is planned for future releases. For now, please use the manual installation or build from source.
 
 ## Verification & Testing
 
@@ -433,27 +369,16 @@ contextmemory mcp-server
 ```
 
 #### Support Channels
-- **Documentation**: https://docs.contextmemory.dev
-- **GitHub Issues**: https://github.com/contextmemory/contextmemory/issues
-- **Discord Community**: https://discord.gg/contextmemory
-- **Email Support**: support@contextmemory.dev
+- **GitHub Issues**: https://github.com/cloudygreybeard/contextmemory/issues
 
 ## Updating
 
-### Automatic Updates (Recommended)
-```bash
-contextmemory update
-```
-
 ### Manual Updates
 ```bash
-# Download latest version
-curl -sSL https://install.contextmemory.dev | bash
-
-# Or with package managers
-brew upgrade contextmemory       # Homebrew
-sudo apt update && sudo apt upgrade contextmemory  # APT
-choco upgrade contextmemory      # Chocolatey
+# Pull latest from repository and rebuild
+cd contextmemory
+git pull origin main
+make install
 ```
 
 ### Backup Before Update
@@ -470,16 +395,15 @@ contextmemory restore ~/contextmemory-backup-20251229.tar.gz
 After successful installation:
 
 1. Read the [Automation System Guide](AUTOMATION_SYSTEM.md) to understand automation features
-2. Try the [Getting Started Tutorial](GETTING_STARTED.md) with real conversations  
-3. Customize your [Configuration](CONFIGURATION.md) for your workflow
-4. Join the [Community](https://discord.gg/contextmemory) for tips and support
+2. Explore the examples in the README to get started with real conversations
+3. Customize your configuration for your workflow
 
 ## Development Installation
 
 ### Build from Source
 ```bash
 # Clone repository
-git clone https://github.com/contextmemory/contextmemory.git
+git clone https://github.com/cloudygreybeard/contextmemory.git
 cd contextmemory
 
 # Build MCP server

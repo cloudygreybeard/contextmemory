@@ -120,20 +120,9 @@ The MCP server implements comprehensive memory and automation tools:
 
 ## Installation
 
-**Quick Start:**
-```bash
-# Single-command installation
-curl -sSL https://install.contextmemory.dev | bash
-
-# Configure Cursor IDE
-contextmemory config cursor
-
-# Usage: @contextmemory monitor
-```
-
 **See the [Installation Guide](docs/INSTALLATION_GUIDE.md)** for:
 - Manual installation instructions
-- Package manager options (Homebrew, APT, Chocolatey, etc.)
+- Build from source
 - Multi-platform support (macOS, Linux, Windows)
 - IDE configuration for Cursor, VS Code, and others
 - Troubleshooting and verification steps
@@ -142,7 +131,7 @@ contextmemory config cursor
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/contextmemory.git
+git clone https://github.com/cloudygreybeard/contextmemory.git
 cd contextmemory
 
 # Build enhanced MCP server with automation
