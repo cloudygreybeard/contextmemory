@@ -14,7 +14,7 @@ const execAsync = promisify(cp.exec);
 export class CMCtlService implements vscode.Disposable {
     private config: CMCtlConfig;
     private outputChannel: vscode.OutputChannel;
-    private static readonly EXTENSION_VERSION = '0.6.5';
+    private static readonly EXTENSION_VERSION = '0.6.6';
 
     constructor() {
         this.outputChannel = vscode.window.createOutputChannel('ContextMemory');
