@@ -33,7 +33,7 @@ Verbosity levels:
 - -v=0 (quiet): Only essential output
 - -v=1 (normal): Standard messages (default)
 - -v=2 (verbose): Debug info and config details`,
-	Version: "0.7.0",
+	Version: "0.6.5",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
